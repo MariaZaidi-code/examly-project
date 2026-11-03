@@ -588,7 +588,7 @@ async function loadOverview(){
  paintSidebar(d);
  const p=d.profile||{},first=displayName().split(" ")[0];
  $("#ovGreet").textContent=d.greeting+(first&&first!=="Your name"?", "+first:"");
- $("#ovSub").textContent=[p.program,p.term].filter(Boolean).join(", ")||(S.user?"Signed in as @"+S.user.username+" \u00b7 tap your name to personalise your profile.":"Tap your name in the sidebar to set up your profile.");
+ $("#ovSub").textContent=[p.program,p.term].filter(Boolean).join(", ")||"Let\u2019s continue your exam preparation.";
  const mins=d.last7_total||0;
  $("#ovDelta").textContent=mins?mins+" min logged this week":"No study logged yet";
  $("#ovHours").innerHTML='<span id="ovHoursN">0</span> <small style="font-size:13px;font-weight:400;color:var(--ink3)">hours spent</small>';
