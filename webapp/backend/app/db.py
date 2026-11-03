@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS proposals(id INTEGER PRIMARY KEY, created_at TEXT NOT
 CREATE TABLE IF NOT EXISTS proposal_items(id INTEGER PRIMARY KEY, proposal_id INTEGER REFERENCES proposals(id) ON DELETE CASCADE,
   subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE, topic TEXT NOT NULL, scheduled_at TEXT NOT NULL, duration_min INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS study_log(id INTEGER PRIMARY KEY, day TEXT NOT NULL, minutes INTEGER NOT NULL, subject_id INTEGER, session_id INTEGER);
-CREATE TABLE IF NOT EXISTS quizzes(id INTEGER PRIMARY KEY, subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS quizzes(id INTEGER PRIMARY KEY, subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL, difficulty TEXT NOT NULL DEFAULT 'standard');
 CREATE TABLE IF NOT EXISTS questions(id INTEGER PRIMARY KEY, quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE, position INTEGER NOT NULL,
   prompt TEXT NOT NULL, options TEXT NOT NULL, correct_index INTEGER NOT NULL, explanation TEXT,
   source_file TEXT, source_page INTEGER, topic_id INTEGER REFERENCES topics(id));
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE NO
   salt TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS auth_sessions(token TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   created_at TEXT NOT NULL, expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS study_preferences(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 """
 
 def today():
@@ -53,7 +55,11 @@ def conn():
 def init():
     with conn() as c:
         c.executescript(SCHEMA)
+        quiz_columns = {r["name"] for r in c.execute("PRAGMA table_info(quizzes)")}
+        if "difficulty" not in quiz_columns:
+            c.execute("ALTER TABLE quizzes ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'standard'")
         c.execute("INSERT OR IGNORE INTO profile(id,name,program,term) VALUES(1,'','','')")
+        c.execute("INSERT OR IGNORE INTO study_preferences(key,value) VALUES('daily_goal_minutes','60')")
         # Files are not stored, so anything still 'indexing' at boot was interrupted by a restart.
         c.execute("UPDATE documents SET status='failed' WHERE status='indexing'")
 

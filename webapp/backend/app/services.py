@@ -180,8 +180,90 @@ def answer(c, message, subject_id=None, level="Standard", document_ids=None):
     body = " ".join(f"{best_sentence(h['text'], q)} [{i + 1}]" for i, h in enumerate(hits[:2]))
     return {"answer": body, "citations": cites, "grounded": True, "mode": "extractive"}
 
+SUMMARY_LEVELS = {
+    "short": {"label": "Short", "target": "about 150-220 words", "fallback_count": 5},
+    "medium": {"label": "Medium", "target": "about 300-450 words", "fallback_count": 9},
+    "detailed": {"label": "Detailed", "target": "about 500-700 words", "fallback_count": 14},
+}
+
+def summarize_materials(c, subject_id, detail="medium", document_id=None):
+    """Create a source-cited summary from indexed chunks in a selected scope."""
+    setting = SUMMARY_LEVELS[detail]
+    subject = db.one(c, "SELECT id,name FROM subjects WHERE id=?", (subject_id,))
+    if not subject: return None
+    sql = """SELECT ch.text,ch.page,d.id document_id,d.filename
+             FROM chunks ch JOIN documents d ON d.id=ch.document_id
+             WHERE d.status='indexed' AND d.subject_id=?"""
+    args = [subject_id]
+    if document_id is not None:
+        doc = db.one(c, "SELECT id,subject_id FROM documents WHERE id=?", (document_id,))
+        if not doc or doc["subject_id"] != subject_id: return None
+        sql += " AND d.id=?"
+        args.append(document_id)
+    chunks = db.rows(c, sql + " ORDER BY d.id,ch.page,ch.id", args)
+    if not chunks: return {"error": "no_material"}
+
+    if len(chunks) > 32:
+        step = (len(chunks) - 1) / 31
+        chunks = [chunks[round(i * step)] for i in range(32)]
+    source_ids, citations, excerpts = {}, [], []
+    for chunk in chunks:
+        key = (chunk["document_id"], chunk["page"])
+        if key not in source_ids:
+            source_id = len(citations) + 1
+            source_ids[key] = source_id
+            citations.append({"n": source_id, "document_id": chunk["document_id"],
+                              "filename": chunk["filename"], "page": chunk["page"],
+                              "quote": chunk["text"][:450]})
+        excerpts.append(f"[{source_ids[key]}] {chunk['text'][:1000]}")
+
+    ctx = "\n".join(excerpts)
+    if config.configured_providers():
+        generated = llm.generate(
+            "You are a study-notes summarizer. Summarize only the provided indexed excerpts. "
+            "Do not add facts, examples, or claims absent from the source. Cite factual statements "
+            "with the provided [n] references. Use a clear title, meaningful headings, and concise "
+            "bullets where appropriate. If the excerpts do not support a detail, omit it.",
+            f"Subject: {subject['name']}\nDetail: {setting['label']} ({setting['target']})\n"
+            f"Write a structured summary at this detail level. Excerpts:\n{ctx}",
+        )
+        if generated and generated.get("text"):
+            return {"summary": generated["text"], "detail": detail, "subject": subject["name"],
+                    "scope": {"subject_id": subject_id, "subject": subject["name"],
+                              "document_id": document_id},
+                    "citations": citations, "mode": "llm", "provider": generated["provider"]}
+
+    candidates = []
+    seen = set()
+    for chunk in chunks:
+        source_id = source_ids[(chunk["document_id"], chunk["page"])]
+        text = re.sub(r"(?m)^\s*#{1,6}\s+", "", chunk["text"])
+        for sentence in re.split(r"(?<=[.!?])\s+", text):
+            sentence = sentence.strip(" \t-*")
+            words = tok(sentence)
+            normalized = re.sub(r"\W+", " ", sentence.lower()).strip()
+            if len(words) < 4 or normalized in seen: continue
+            seen.add(normalized)
+            candidates.append({"text": sentence, "source": source_id, "words": set(words)})
+    if not candidates: return {"error": "no_material"}
+    selected, covered = [], set()
+    while candidates and len(selected) < setting["fallback_count"]:
+        choice = max(candidates, key=lambda x: (len(x["words"] - covered), min(len(x["text"]), 220)))
+        candidates.remove(choice)
+        selected.append(choice)
+        covered.update(choice["words"])
+    lines = ["## " + subject["name"] + " - " + setting["label"] + " summary", "",
+             "This extractive summary uses sentences from your indexed material:",
+             ""]
+    lines.extend("- " + item["text"] + f" [{item['source']}]" for item in selected)
+    return {"summary": "\n".join(lines), "detail": detail, "subject": subject["name"],
+            "scope": {"subject_id": subject_id, "subject": subject["name"],
+                      "document_id": document_id},
+            "citations": citations, "mode": "extractive"}
+
 # ---------- quiz ----------
-def make_cloze(text, pool, focus=None):
+def make_cloze(text, pool, focus=None, difficulty="standard"):
+    text = re.sub(r"(?m)^\s*#{1,6}\s+.*$", "", text).strip()
     sents = [s for s in re.split(r"(?<=[.!?])\s+", text) if 8 <= len(s.split()) <= 40]
     if focus:                                  # topic-scoped practice: prefer sentences about the topic
         hit = [s for s in sents if focus & set(tok(s))]
@@ -190,9 +272,12 @@ def make_cloze(text, pool, focus=None):
     for s in sents:
         cands = [w for w in re.findall(r"[A-Za-z]{6,}", s) if w.lower() not in STOP]
         if not cands: continue
-        target = max(cands, key=len)
-        distract = [w for w in pool if w.lower() != target.lower() and abs(len(w) - len(target)) <= 4]
+        target = min(cands, key=len) if difficulty == "basic" else max(cands, key=len)
+        tolerance = 6 if difficulty == "basic" else 2 if difficulty == "advanced" else 4
+        distract = [w for w in pool if w.lower() != target.lower() and abs(len(w) - len(target)) <= tolerance]
         distract = list(dict.fromkeys(w.lower() for w in distract))
+        if len(distract) < 2:
+            distract = list(dict.fromkeys(w.lower() for w in pool if w.lower() != target.lower()))
         if len(distract) < 2: continue
         opts = random.sample(distract, 2) + [target.lower()]
         random.shuffle(opts)
@@ -200,7 +285,8 @@ def make_cloze(text, pool, focus=None):
         return prompt, opts, opts.index(target.lower()), s
     return None
 
-def _build_quiz(c, subject_id, chunks, count, topic, focus=None, quiz_id=None, existing_sents=None):
+def _build_quiz(c, subject_id, chunks, count, topic, focus=None, quiz_id=None, existing_sents=None,
+                difficulty="standard"):
     existing_sents = set(existing_sents or [])
     pool = list({w for ch in chunks for w in re.findall(r"[A-Za-z]{6,}", ch["text"]) if w.lower() not in STOP})
     random.shuffle(chunks)
@@ -208,13 +294,14 @@ def _build_quiz(c, subject_id, chunks, count, topic, focus=None, quiz_id=None, e
     new_count = 0
     created = False
     if quiz_id is None:
-        c.execute("INSERT INTO quizzes(subject_id,created_at) VALUES(?,?)", (subject_id, db.now_iso()))
+        c.execute("INSERT INTO quizzes(subject_id,created_at,difficulty) VALUES(?,?,?)",
+                  (subject_id, db.now_iso(), difficulty))
         quiz_id = c.execute("SELECT last_insert_rowid()").fetchone()[0]
         created = True
     start_pos = db.one(c, "SELECT COALESCE(MAX(position),0) n FROM questions WHERE quiz_id=?", (quiz_id,))["n"]
     for ch in chunks * 3:
         if new_count >= count: break
-        m = make_cloze(ch["text"], pool, focus)
+        m = make_cloze(ch["text"], pool, focus, difficulty)
         if not m or m[3] in made: continue
         prompt, opts, ci, sent = m
         tname = topic or os.path.splitext(ch["filename"])[0].replace("_", " ")
@@ -240,9 +327,10 @@ def extend_quiz(c, quiz_id, count=5, document_ids=None):
     chunks = db.rows(c, sql, args)
     if not chunks: return None
     existing = {q["explanation"] for q in db.rows(c, "SELECT explanation FROM questions WHERE quiz_id=?", (quiz_id,))}
-    return _build_quiz(c, subject_id, list(chunks), count, None, None, quiz_id=quiz_id, existing_sents=existing)
+    return _build_quiz(c, subject_id, list(chunks), count, None, None, quiz_id=quiz_id,
+                       existing_sents=existing, difficulty=qz.get("difficulty", "standard"))
 
-def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
+def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None, difficulty="standard"):
     sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"
     args = [subject_id]
     if document_ids: sql += " AND d.id IN (%s)" % ",".join("?" * len(document_ids)); args += document_ids
@@ -255,7 +343,7 @@ def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
         if matched: attempts.append((matched, focus, topic))
     attempts.append((chunks, None, None))      # fall back to the whole subject rather than failing
     for pool_chunks, foc, label in attempts:
-        qid = _build_quiz(c, subject_id, list(pool_chunks), count, label, foc)
+        qid = _build_quiz(c, subject_id, list(pool_chunks), count, label, foc, difficulty=difficulty)
         if qid: return qid
     return None
 
@@ -292,7 +380,7 @@ def public_question(q, reveal=False):
     return out
 
 def quiz_view(c, quiz_id):
-    qz = db.one(c, "SELECT * FROM quizzes WHERE id=?", (quiz_id,))
+    qz = db.one(c, "SELECT z.*,s.name subject FROM quizzes z LEFT JOIN subjects s ON s.id=z.subject_id WHERE z.id=?", (quiz_id,))
     if not qz: return None
     qs = db.rows(c, "SELECT q.*, a.chosen, a.correct FROM questions q LEFT JOIN answers a ON a.question_id=q.id WHERE quiz_id=? ORDER BY position", (quiz_id,))
     items = []
@@ -302,7 +390,8 @@ def quiz_view(c, quiz_id):
         if it["answered"]: it.update(chosen=q["chosen"], correct=bool(q["correct"]))
         items.append(it)
     done = sum(1 for i in items if i["answered"])
-    return {"id": quiz_id, "subject_id": qz["subject_id"], "total": len(items), "answered": done,
+    return {"id": quiz_id, "subject_id": qz["subject_id"], "subject": qz["subject"],
+            "difficulty": qz.get("difficulty", "standard"), "total": len(items), "answered": done,
             "correct": sum(1 for i in items if i.get("correct")), "questions": items}
 
 # ---------- proficiency ----------
@@ -347,23 +436,32 @@ def sm2_update(c, topic_id, correct, day=None, quality=None):
               (topic_id, ease, interval, reps, lapses, due, day.isoformat()))
     return {"topic_id": topic_id, "interval_days": interval, "due": due, "reps": reps, "lapses": lapses, "ease": round(ease, 2)}
 
-def flashcards(c, limit=20, document_id=None, due_only=True):
+def flashcards(c, limit=20, document_id=None, due_only=True, subject_id=None):
     """Cards are the quiz questions already built from the student's notes; a card is due when its topic's review is due.
 
     With ``document_id``, only cards whose source file is that document are
-    returned (``scope`` names the file). Returns None for an unknown document.
+    returned (``scope`` names the file). A subject scope includes cards from
+    every document in that subject. Returns None for an unknown scope.
     """
     today = db.today().isoformat()
     where, args, scope = "", [], None
+    if subject_id is not None:
+        subject = db.one(c, "SELECT id, name FROM subjects WHERE id=?", (subject_id,))
+        if not subject: return None
+        where += " AND s.id=?"
+        args.append(subject_id)
+        scope = {"subject_id": subject["id"], "subject": subject["name"]}
     if document_id is not None:
         doc = db.one(c, "SELECT id, filename, subject_id FROM documents WHERE id=?", (document_id,))
         if not doc: return None
-        where = " AND q.source_file=?"
-        args.append(doc["filename"])
+        if subject_id is not None and doc["subject_id"] != subject_id: return None
+        where += " AND d.id=?"
+        args.append(doc["id"])
         scope = {"document_id": doc["id"], "filename": doc["filename"], "subject_id": doc["subject_id"]}
     rows = db.rows(c, """SELECT q.id question_id, q.prompt, q.options, q.correct_index, q.explanation, q.source_file, q.source_page,
                               t.id topic_id, t.name topic, s.id subject_id, s.name subject, r.due, r.interval_days, r.reps
                        FROM questions q JOIN topics t ON t.id=q.topic_id JOIN subjects s ON s.id=t.subject_id
+                       JOIN documents d ON d.subject_id=s.id AND d.filename=q.source_file AND d.status='indexed'
                        LEFT JOIN reviews r ON r.topic_id=t.id WHERE 1=1""" + where + " ORDER BY q.id DESC", args)
     cards = []
     for q in rows:

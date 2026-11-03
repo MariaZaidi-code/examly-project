@@ -1,5 +1,5 @@
 """Examly API (Starlette). Run: uvicorn app.main:app --reload"""
-import datetime as dt, calendar, os, re
+import datetime as dt, calendar, os, re, csv, io
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
 from starlette.middleware import Middleware
@@ -83,6 +83,8 @@ async def dashboard(req):
         last7 = [{"date": d.isoformat(), "weekday": d.strftime("%a"), "minutes": m} for d, m in sv.minutes_by_day(c, 7)]
         weak = sorted(sv.topic_stats(c), key=lambda s: s["proficiency"])
         due = sv.due_reviews(c)
+        goal = int(db.one(c, "SELECT value FROM study_preferences WHERE key='daily_goal_minutes'")["value"])
+        studied_today = db.one(c, "SELECT COALESCE(SUM(minutes),0) n FROM study_log WHERE day=?", (t.isoformat(),))["n"]
         hour = dt.datetime.now().hour
         counts = {k: db.one(c, f"SELECT COUNT(*) n FROM {k}")["n"]
                   for k in ("documents", "sessions", "quizzes", "answers")}
@@ -92,9 +94,82 @@ async def dashboard(req):
             "today_sessions": today_s, "last7": last7, "last7_total": sum(x["minutes"] for x in last7),
             "weakest": [{**w, "band": sv.band(w["proficiency"])} for w in weak[:3]],
             "reviews_due": due,
+            "daily_goal": {"target_minutes": goal, "studied_minutes": studied_today,
+                           "progress_percent": min(100, round(studied_today * 100 / goal)) if goal else 0},
             "counts": counts,
             "recommended": ({"topic": weak[0]["topic"], "subject": weak[0]["subject"], "proficiency": weak[0]["proficiency"], "answers": weak[0]["answers"]} if weak else None),
         })
+
+async def study_goal(req):
+    with db.conn() as c:
+        if req.method == "PUT":
+            d = await body(req)
+            try: minutes = int(d.get("target_minutes"))
+            except (TypeError, ValueError): return err("target_minutes must be an integer")
+            if not 5 <= minutes <= 720: return err("target_minutes must be between 5 and 720")
+            c.execute("UPDATE study_preferences SET value=? WHERE key='daily_goal_minutes'", (str(minutes),))
+        target = int(db.one(c, "SELECT value FROM study_preferences WHERE key='daily_goal_minutes'")["value"])
+        studied = db.one(c, "SELECT COALESCE(SUM(minutes),0) n FROM study_log WHERE day=?", (db.today().isoformat(),))["n"]
+        return JSONResponse({"target_minutes": target, "studied_minutes": studied,
+                             "progress_percent": min(100, round(studied * 100 / target)) if target else 0})
+
+async def export_data(req):
+    fmt = (req.query_params.get("format") or "json").strip().lower()
+    if fmt not in ("json", "csv"): return err("format must be json or csv")
+    with db.conn() as c:
+        logs = db.rows(c, """SELECT l.day date,l.minutes,s.name subject,l.session_id
+                            FROM study_log l LEFT JOIN subjects s ON s.id=l.subject_id
+                            ORDER BY l.day,l.id""")
+        if fmt == "csv":
+            output = io.StringIO(newline="")
+            writer = csv.DictWriter(output, fieldnames=("date", "minutes", "subject", "session_id"))
+            writer.writeheader()
+            writer.writerows(logs)
+            return PlainTextResponse(output.getvalue(), media_type="text/csv",
+                                     headers={"Content-Disposition": 'attachment; filename="examly-study-log.csv"'})
+        profile_ = db.one(c, "SELECT name,program,term FROM profile WHERE id=1")
+        return JSONResponse({
+            "exported_at": db.now_iso(),
+            "profile": profile_,
+            "subjects": db.rows(c, "SELECT id,name FROM subjects ORDER BY name"),
+            "documents": db.rows(c, "SELECT d.id,d.filename,d.pages,d.status,d.added_at,s.name subject FROM documents d JOIN subjects s ON s.id=d.subject_id ORDER BY d.id"),
+            "study_log": logs,
+            "sessions": db.rows(c, "SELECT x.id,x.topic,x.scheduled_at,x.duration_min,x.status,x.completed_at,s.name subject FROM sessions x JOIN subjects s ON s.id=x.subject_id ORDER BY x.scheduled_at"),
+            "quiz_results": db.rows(c, """SELECT z.id quiz_id,z.created_at,s.name subject,
+                COUNT(a.id) answered,SUM(a.correct) correct,
+                CASE WHEN COUNT(a.id)>0 THEN ROUND(100.0*SUM(a.correct)/COUNT(a.id),1) ELSE NULL END score_percent
+                FROM quizzes z JOIN subjects s ON s.id=z.subject_id
+                LEFT JOIN questions q ON q.quiz_id=z.id LEFT JOIN answers a ON a.question_id=q.id
+                GROUP BY z.id ORDER BY z.id"""),
+        }, headers={"Content-Disposition": 'attachment; filename="examly-study-data.json"'})
+
+async def analytics_day(req):
+    raw = req.query_params.get("date", "")
+    try: day = dt.date.fromisoformat(raw)
+    except ValueError: return err("date must be YYYY-MM-DD")
+    sid = req.query_params.get("subject_id", "").strip()
+    try: subject_id = int(sid) if sid else None
+    except ValueError: return err("subject_id must be an integer")
+    with db.conn() as c:
+        if subject_id is not None and not db.one(c, "SELECT 1 FROM subjects WHERE id=?", (subject_id,)):
+            return err("subject not found", 404)
+        study = db.rows(c, """SELECT l.id,l.minutes,s.name subject,l.session_id
+                             FROM study_log l LEFT JOIN subjects s ON s.id=l.subject_id
+                             WHERE l.day=? AND (? IS NULL OR l.subject_id=?) ORDER BY l.id""",
+                        (day.isoformat(), subject_id, subject_id))
+        sessions = db.rows(c, """SELECT x.id,x.topic,x.scheduled_at,x.duration_min,x.status,s.name subject
+                                FROM sessions x JOIN subjects s ON s.id=x.subject_id
+                                WHERE substr(x.scheduled_at,1,10)=? AND (? IS NULL OR x.subject_id=?)
+                                ORDER BY x.scheduled_at""", (day.isoformat(), subject_id, subject_id))
+        quizzes = db.rows(c, """SELECT z.id quiz_id,z.created_at,s.name subject,COUNT(a.id) answered,
+                               COALESCE(SUM(a.correct),0) correct,
+                               CASE WHEN COUNT(a.id)>0 THEN ROUND(100.0*SUM(a.correct)/COUNT(a.id),1) ELSE NULL END score_percent
+                               FROM quizzes z JOIN subjects s ON s.id=z.subject_id
+                               JOIN questions q ON q.quiz_id=z.id JOIN answers a ON a.question_id=q.id
+                               WHERE substr(a.answered_at,1,10)=? AND (? IS NULL OR z.subject_id=?)
+                               GROUP BY z.id ORDER BY z.id""", (day.isoformat(), subject_id, subject_id))
+        return JSONResponse({"date": day.isoformat(), "study_minutes": sum(x["minutes"] for x in study),
+                             "study_logs": study, "sessions": sessions, "quizzes": quizzes})
 
 # ---- materials ----
 async def materials(req):
@@ -132,6 +207,23 @@ async def material_delete(req):
     with db.conn() as c:
         c.execute("DELETE FROM documents WHERE id=?", (req.path_params["id"],))
     return JSONResponse({"ok": True})
+
+async def material_summary(req):
+    d = await body(req)
+    try:
+        subject_id = int(d["subject_id"])
+        document_id = int(d["document_id"]) if d.get("document_id") not in (None, "") else None
+    except (KeyError, TypeError, ValueError):
+        return err("subject_id must be an integer and document_id must be an integer when provided")
+    detail = d.get("detail", "medium")
+    if not isinstance(detail, str) or detail not in sv.SUMMARY_LEVELS:
+        return err("detail must be short, medium or detailed")
+    with db.conn() as c:
+        result = sv.summarize_materials(c, subject_id, detail, document_id)
+    if result is None: return err("subject or selected document not found in that subject", 404)
+    if result.get("error") == "no_material":
+        return err("No usable indexed text in this scope. Upload or index study materials first.", 422)
+    return JSONResponse(result)
 
 # ---- assistant ----
 async def assistant_status(req):
@@ -251,11 +343,15 @@ async def quizzes_list(req):
 
 async def quiz_create(req):
     d = await body(req)
+    difficulty = d.get("difficulty", "standard")
+    if not isinstance(difficulty, str) or difficulty not in ("basic", "standard", "advanced"):
+        return err("difficulty must be basic, standard or advanced")
+    try: count = max(1, min(int(d.get("count", 5)), 20))
+    except (TypeError, ValueError): return err("count must be an integer")
     with db.conn() as c:
         sid = subject_id_for(c, d)
         if not sid: return err("subject_id required")
-        count = max(1, min(int(d.get("count", 5)), 20))
-        qid = sv.generate_quiz(c, sid, count, d.get("topic"), d.get("document_ids"))
+        qid = sv.generate_quiz(c, sid, count, d.get("topic"), d.get("document_ids"), difficulty)
         if not qid: return err("No usable text in this subject's indexed materials. Upload notes first.", 422)
         return JSONResponse(sv.quiz_view(c, qid), status_code=201)
 
@@ -332,13 +428,17 @@ async def flashcards(req):
     try: limit = max(1, min(int(req.query_params.get("limit", 20)), 50))
     except ValueError: return err("limit must be an integer")
     doc_id = None
+    subject_id = None
     if (req.query_params.get("document_id") or "").strip():
         try: doc_id = int(req.query_params["document_id"])
         except ValueError: return err("document_id must be an integer")
+    if (req.query_params.get("subject_id") or "").strip():
+        try: subject_id = int(req.query_params["subject_id"])
+        except ValueError: return err("subject_id must be an integer")
     due_only = (req.query_params.get("due_only", "1") or "1").strip().lower() not in ("0", "false", "no", "all")
     with db.conn() as c:
-        out = sv.flashcards(c, limit, doc_id, due_only)
-    if out is None: return err("document not found", 404)
+        out = sv.flashcards(c, limit, doc_id, due_only, subject_id)
+    if out is None: return err("document not found" if doc_id is not None else "subject not found", 404)
     return JSONResponse(out)
 
 async def activity(req):
@@ -458,18 +558,38 @@ async def weak_topics(req):
     return JSONResponse({"heatmap": {"columns": areas, "rows": heat}, "ranked": ranked})
 
 async def analytics(req):
+    try: window = int(req.query_params.get("days", "30"))
+    except ValueError: return err("days must be 7, 30 or 90")
+    if window not in (7, 30, 90): return err("days must be 7, 30 or 90")
+    raw_sid = (req.query_params.get("subject_id") or "").strip()
+    try: subject_id = int(raw_sid) if raw_sid else None
+    except ValueError: return err("subject_id must be an integer")
+    start = db.today() - dt.timedelta(days=window - 1)
     with db.conn() as c:
-        days = sv.minutes_by_day(c, 30)
-        qz = db.rows(c, "SELECT z.id, MIN(a.answered_at) at, AVG(a.correct)*100 score, COUNT(a.id) n FROM quizzes z JOIN questions q ON q.quiz_id=z.id JOIN answers a ON a.question_id=q.id GROUP BY z.id ORDER BY z.id")
-        subj = {}
-        for s in sv.topic_stats(c): subj.setdefault(s["subject"], []).append(s)
+        if subject_id is not None and not db.one(c, "SELECT 1 FROM subjects WHERE id=?", (subject_id,)):
+            return err("subject not found", 404)
+        params = (start.isoformat(), subject_id, subject_id)
+        grouped = {r["day"]: r["minutes"] for r in db.rows(c, """SELECT l.day,COALESCE(SUM(l.minutes),0) minutes
+            FROM study_log l WHERE l.day>=? AND (? IS NULL OR l.subject_id=?) GROUP BY l.day""", params)}
+        days = [(start + dt.timedelta(days=i), grouped.get((start + dt.timedelta(days=i)).isoformat(), 0)) for i in range(window)]
+        qz = db.rows(c, """SELECT z.id, MIN(a.answered_at) at, AVG(a.correct)*100 score, COUNT(a.id) n
+            FROM quizzes z JOIN questions q ON q.quiz_id=z.id JOIN answers a ON a.question_id=q.id
+            WHERE a.answered_at>=? AND (? IS NULL OR z.subject_id=?)
+            GROUP BY z.id ORDER BY at,z.id""", params)
+        subj = db.rows(c, """SELECT s.name subject,
+            ROUND(100.0*SUM(a.correct)/COUNT(a.id)) proficiency
+            FROM quizzes z JOIN subjects s ON s.id=z.subject_id
+            JOIN questions q ON q.quiz_id=z.id JOIN answers a ON a.question_id=q.id
+            WHERE a.answered_at>=? AND (? IS NULL OR z.subject_id=?)
+            GROUP BY s.id,s.name ORDER BY s.name""", params)
         return JSONResponse({
             "study_hours_30d": round(sum(m for _, m in days) / 60, 1),
-            "active_days_30d": sum(1 for _, m in days if m > 0), "window_days": 30,
+            "active_days_30d": sum(1 for _, m in days if m > 0), "window_days": window,
             "current_streak": sv.streak(c),
-            "quiz_trend": [{"quiz_id": z["id"], "date": (z["at"] or "")[:10], "score": round(z["score"])} for z in qz],
-            "subject_comparison": [{"subject": k, "proficiency": round(sum(x["proficiency"] * x["answers"] for x in v) / sum(x["answers"] for x in v))} for k, v in sorted(subj.items())],
+            "quiz_trend": [{"quiz_id": z["id"], "date": (z["at"] or "")[:10], "score": round(z["score"]), "answered": z["n"]} for z in qz],
+            "subject_comparison": subj,
             "daily_minutes": [{"date": d.isoformat(), "minutes": m} for d, m in days],
+            "filters": {"days": window, "subject_id": subject_id},
         })
 
 routes = [
@@ -483,8 +603,11 @@ routes = [
     Route("/api/subjects", subjects, methods=["GET", "POST"]),
     Route("/api/exams", exams, methods=["GET", "POST"]),
     Route("/api/dashboard", dashboard),
+    Route("/api/study-goal", study_goal, methods=["GET", "PUT"]),
+    Route("/api/export", export_data),
     Route("/api/materials", materials, methods=["GET", "POST"]),
     Route("/api/materials/{id:int}", material_delete, methods=["DELETE"]),
+    Route("/api/summaries", material_summary, methods=["POST"]),
     Route("/api/assistant/status", assistant_status),
     Route("/api/assistant/chat", assistant_chat, methods=["POST"]),
     Route("/api/assistant/history", assistant_history, methods=["GET", "DELETE"]),
@@ -509,6 +632,7 @@ routes = [
     Route("/api/activity", activity),
     Route("/api/weak-topics", weak_topics),
     Route("/api/analytics", analytics),
+    Route("/api/analytics/day", analytics_day),
 ]
 
 from contextlib import asynccontextmanager

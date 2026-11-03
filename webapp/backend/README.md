@@ -36,27 +36,34 @@ The app starts empty. Files: pdf, txt, md, pptx, ppt (25 MB max).
 | GET/PUT /profile | name, program, term, initial |
 | GET/POST /subjects, GET/POST /exams | exam: {subject_id, title, date YYYY-MM-DD} |
 | GET /dashboard | greeting, next_exam{days_left}, streak_days, today_sessions, last7[], last7_total, weakest[3], recommended, reviews_due[] |
+| GET/PUT /study-goal | target_minutes (5–720), today's studied_minutes and progress_percent; dashboard includes the same daily goal |
 | GET/POST /materials, DELETE /materials/{id} | multipart `file` + `subject_id` or `subject`; status indexing->indexed; accepted files: pdf, txt, md, pptx/ppt |
+| POST /summaries | `{subject_id, document_id?, detail?}` -> source-cited summary; detail is `short`, `medium`, or `detailed`; uses AI when configured and a source-extractive summary otherwise |
 | GET /assistant/status; POST /assistant/chat | {message, subject_id?, level?, document_ids?} -> {answer, citations[{n,filename,page,quote}], grounded, mode} |
 | GET/DELETE /assistant/history | |
 | GET /planner/calendar?month=YYYY-MM | first_weekday (Mon=0), days{date:{sessions,exams}} |
-| POST /planner/propose | {days, start_time, duration_min, per_day, subject_ids?} -> proposal, NOT saved |
+| POST /planner/propose | {days, start_time, duration_min, per_day, subject_ids?} -> proposal, NOT saved; the preview can be downloaded as TXT |
 | POST /planner/proposals/{id}/confirm, DELETE .../{id} | confirm saves sessions |
 | PATCH/DELETE /sessions/{id} | status planned/done/skipped; done logs study minutes |
 | POST /study-log | {minutes, day?, subject_id?} |
-| POST /quizzes, GET /quizzes/{id} | {subject_id, count, topic?, document_ids?} cloze MCQs; `topic` focuses generation on sentences that mention it (falls back to the whole subject); `document_ids` restricts generation to those files (used by Flashcards "Build cards from this file"); answers hidden until answered |
+| POST /quizzes, GET /quizzes/{id} | `{subject_id, count, topic?, document_ids?, difficulty?}` cloze MCQs; difficulty is `basic`, `standard`, or `advanced`; `topic` focuses generation on sentences that mention it (falls back to the whole subject); `document_ids` restricts generation to those files; answers hidden until answered |
 | POST /quizzes/{id}/questions/{qid}/answer | {chosen} -> correct, explanation, source, next_question_id |
+| Quiz and schedule downloads | Summary exports include source citations; completed quiz reviews include answers and source explanations; planner TXT exports contain the proposed sessions |
 | GET /weak-topics | heatmap{columns,rows} + ranked[{proficiency, band, last_correct/last_total, answers}] |
 | PUT /topics/{id} | sets the topic group used as a heatmap column (`area`); blank clears it |
 | GET /auth/status | {login_required, user}; first run reports no account |
 | POST /auth/register, /auth/login, /auth/logout | single-account setup, sign in, sign out (HttpOnly session cookie) |
 | GET /review/due | spaced-repetition queue: topics due today with {due, interval_days, reps, lapses, proficiency, band} |
 | POST /review/{id} | grades a flashcard review for that topic: {correct: bool} -> updated schedule |
-| GET /flashcards?limit=20&document_id= | cards built from generated questions, grouped by topic review due date; {total, due_count, mastered, cards[], scope}; `document_id` restricts the deck to one file (404 if unknown) |
+| GET /flashcards?limit=20&subject_id=&document_id= | cards built from generated questions; `subject_id` scopes to the whole subject and `document_id` narrows to one file within it; {total, due_count, mastered, cards[], scope}; unknown scopes return 404 |
 | GET /activity | real assistant history plus stored profile, exams, weakest topics and review counts |
 | GET /analytics | study_hours_30d, active_days_30d, current_streak, quiz_trend, subject_comparison, daily_minutes |
+| GET /analytics?days=7\|30\|90&subject_id= | filter study and quiz trends by period and subject |
+| GET /analytics/day?date=YYYY-MM-DD&subject_id= | daily drilldown for study logs, planner sessions and quiz results |
+| GET /export?format=json\|csv | download real profile, materials metadata, study logs, sessions and quiz results (JSON); study log (CSV) |
 
 Spaced repetition: every quiz answer reschedules that topic (simplified SM-2: 1 -> 3 -> 7 days, then interval x ease; a wrong answer resets it to tomorrow). Due topics appear on the dashboard and in `GET /review/due`.
+Flashcards offer both flip-card and written-recall modes. Written recall lets students compose an answer before revealing the source-grounded solution; students then self-rate recall, and the same review scheduler records the rating.
 
 ## Login (single account)
 First run has no account: `/login` offers **Create your account** (username 3-32 chars, password 6+). After that, pages redirect to `/login` and `/api` returns 401 until signed in. Passwords are PBKDF2-SHA256 (120k iterations) with per-user salt; sessions are opaque tokens in SQLite, sent as an HttpOnly SameSite=Lax cookie for 30 days. One workspace account, no per-user data separation. Log out from the sidebar.

@@ -17,6 +17,18 @@ NOTES = ("Third normal form removes transitive dependencies so that non key attr
          "Normalization decomposes relations to reduce redundancy and update anomalies in relational databases. "
          "Indexing structures such as balanced trees accelerate lookups on frequently queried attributes.\n\n") * 3
 
+def test_cloze_ignores_markdown_headings():
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from app.services import make_cloze
+    result = make_cloze(
+        "# Normalization and functional dependencies\n"
+        "Normalization organizes relations so that redundancy and update anomalies are reduced.",
+        ["Normalization", "relations", "redundancy"],
+    )
+    assert result
+    assert "functional dependencies" not in result[0]
+    assert result[3].startswith("Normalization organizes relations")
+
 @pytest.fixture(scope="module")
 def api():
     s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
@@ -55,6 +67,27 @@ def test_upload_and_indexing(api):
         if m[0]["status"] != "indexing": break
         time.sleep(0.1)
     assert m[0]["status"] == "indexed" and m[0]["pages"] >= 1
+    S["docid"] = m[0]["id"]
+
+def test_source_grounded_summaries(api):
+    whole = requests.post(api + "/summaries", json={"subject_id": S["sid"], "detail": "short"})
+    assert whole.status_code == 200
+    result = whole.json()
+    assert result["mode"] == "extractive" and result["detail"] == "short"
+    assert result["citations"] and result["citations"][0]["filename"] == "dbms_normalization.txt"
+    assert "[1]" in result["summary"] and "Third normal form" in result["summary"]
+    scoped = requests.post(api + "/summaries", json={
+        "subject_id": S["sid"], "document_id": S["docid"], "detail": "detailed",
+    })
+    assert scoped.status_code == 200 and scoped.json()["scope"]["document_id"] == S["docid"]
+    assert scoped.json()["detail"] == "detailed"
+    assert requests.post(api + "/summaries", json={"subject_id": S["sid"], "detail": "long"}).status_code == 400
+    requests.post(api + "/subjects", json={"name": "Empty Subject"})
+    empty_subject = next(x["id"] for x in requests.get(api + "/subjects").json() if x["name"] == "Empty Subject")
+    assert requests.post(api + "/summaries", json={"subject_id": empty_subject}).status_code == 422
+    assert requests.post(api + "/summaries", json={
+        "subject_id": empty_subject, "document_id": S["docid"],
+    }).status_code == 404
 
 def test_assistant_grounded_and_refuses(api):
     r = requests.post(api + "/assistant/chat", json={"message": "Explain third normal form", "subject_id": S["sid"]}).json()
@@ -85,9 +118,10 @@ def test_retrieval_prefers_full_query_coverage(api):
     assert requests.get(api + "/assistant/status").json()["llm_connected"] is False
 
 def test_quiz_flow_and_weak_topics(api):
-    r = requests.post(api + "/quizzes", json={"subject_id": S["sid"], "count": 3})
+    assert requests.post(api + "/quizzes", json={"subject_id": S["sid"], "difficulty": "expert"}).status_code == 400
+    r = requests.post(api + "/quizzes", json={"subject_id": S["sid"], "count": 3, "difficulty": "basic"})
     assert r.status_code == 201
-    q = r.json(); assert q["total"] >= 1 and "correct_index" not in q["questions"][0]
+    q = r.json(); assert q["total"] >= 1 and q["difficulty"] == "basic" and "correct_index" not in q["questions"][0]
     first = q["questions"][0]
     wrong = (0 if first["options"] else 0)
     a = requests.post(f"{api}/quizzes/{q['id']}/questions/{first['id']}/answer", json={"chosen": 99})
@@ -167,6 +201,36 @@ def test_session_completion_feeds_streak_and_dashboard(api):
     assert d["streak_days"] == 1 and d["last7_total"] == 45 and d["last7"][-1]["minutes"] == 45
     a = requests.get(api + "/analytics").json()
     assert a["active_days_30d"] == 1 and a["study_hours_30d"] == 0.8
+    assert d["daily_goal"]["studied_minutes"] == 45
+
+def test_analytics_filters_drilldown_and_exports(api):
+    a = requests.get(api + "/analytics?days=7&subject_id=" + str(S["sid"])).json()
+    assert a["filters"] == {"days": 7, "subject_id": S["sid"]}
+    assert len(a["daily_minutes"]) == 7
+    assert a["daily_minutes"][-1]["minutes"] >= 45
+    assert requests.get(api + "/analytics?days=8").status_code == 400
+    assert requests.get(api + "/analytics?subject_id=not-a-number").status_code == 400
+    day = requests.get(api + "/analytics/day?date=2026-11-03&subject_id=" + str(S["sid"])).json()
+    assert day["study_minutes"] >= 45 and day["study_logs"] and day["quizzes"]
+    assert requests.get(api + "/analytics/day?date=bad").status_code == 400
+    assert requests.get(api + "/analytics/day?date=2026-11-03&subject_id=99999").status_code == 404
+    csv_export = requests.get(api + "/export?format=csv")
+    assert csv_export.status_code == 200 and "text/csv" in csv_export.headers["content-type"]
+    assert "examly-study-log.csv" in csv_export.headers["content-disposition"]
+    assert "date,minutes,subject,session_id" in csv_export.text
+    json_export = requests.get(api + "/export?format=json").json()
+    assert json_export["study_log"] and json_export["quiz_results"]
+    assert "examly-study-data.json" in requests.get(api + "/export?format=json").headers["content-disposition"]
+    assert requests.get(api + "/export?format=xml").status_code == 400
+
+def test_daily_study_goal_configuration(api):
+    assert requests.get(api + "/study-goal").json()["target_minutes"] == 60
+    goal = requests.put(api + "/study-goal", json={"target_minutes": 90}).json()
+    assert goal["target_minutes"] == 90 and goal["studied_minutes"] == 45 and goal["progress_percent"] == 50
+    assert requests.put(api + "/study-goal", json={"target_minutes": 4}).status_code == 400
+    assert requests.put(api + "/study-goal", json={"target_minutes": "many"}).status_code == 400
+    assert requests.get(api + "/dashboard").json()["daily_goal"]["target_minutes"] == 90
+    requests.put(api + "/study-goal", json={"target_minutes": 60})
 
 def test_flashcards_and_review_grading(api):
     f = requests.get(api + "/flashcards").json()
@@ -202,10 +266,19 @@ def test_flashcards_scoped_to_selected_document(api):
         assert f["scope"] == {"document_id": doc2, "filename": "joins_cheatsheet.txt", "subject_id": S["sid"]}
         assert f["total"] >= 1 and f["due_count"] >= 1 and f["cards"]
         assert all(c["source"]["file"] == "joins_cheatsheet.txt" for c in f["cards"]) # nothing leaks in from other files
+        whole_subject = requests.get(api + "/flashcards", params={"subject_id": S["sid"], "due_only": 0}).json()
+        assert whole_subject["scope"] == {"subject_id": S["sid"], "subject": "Database Systems"}
+        assert whole_subject["total"] >= f["total"]
+        assert all(c["subject_id"] == S["sid"] for c in whole_subject["cards"])
+        assert requests.get(api + "/flashcards", params={"subject_id": 99999}).status_code == 404
+        assert requests.get(api + "/flashcards?subject_id=x").status_code == 400
+        assert requests.get(api + "/flashcards", params={"subject_id": 99999, "document_id": doc2}).status_code == 404
         assert requests.get(api + "/flashcards", params={"document_id": 99999}).status_code == 404
         assert requests.get(api + "/flashcards?document_id=x").status_code == 400
     finally:
         requests.delete(f"{api}/materials/{doc2}")                                    # restore: only the original doc remains
+    remaining = requests.get(api + "/flashcards", params={"subject_id": S["sid"], "due_only": 0}).json()
+    assert all(c["source"]["file"] != "joins_cheatsheet.txt" for c in remaining["cards"])
 
 def test_activity_returns_real_data(api):
     a = requests.get(api + "/activity").json()
