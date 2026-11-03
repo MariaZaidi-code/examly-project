@@ -15,7 +15,11 @@ LOGIN = os.environ.get("EXAMLY_LOGIN") or os.path.join(os.path.dirname(__file__)
 
 async def index(req):
     if not os.path.isfile(FRONTEND): return PlainTextResponse("frontend.html not found at " + os.path.abspath(FRONTEND), status_code=404)
-    return FileResponse(FRONTEND, media_type="text/html")
+    r = FileResponse(FRONTEND, media_type="text/html")
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
 
 async def login_page(req):
     if not os.path.isfile(LOGIN): return PlainTextResponse("login.html not found at " + os.path.abspath(LOGIN), status_code=404)
