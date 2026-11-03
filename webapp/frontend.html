@@ -247,6 +247,12 @@ dialog h3{margin:0 0 4px;font-size:16px}
 .quiz-result-ring .f{stroke-dasharray:314;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1)}
 .quiz-result-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-weight:700;background:radial-gradient(circle,#fff 55%,transparent 56%);border-radius:50%}
 .quiz-result-txt{flex:1;min-width:220px}
+/* --- sign out button (sidebar) --- */
+.signout{display:flex;align-items:center;gap:8px;width:calc(100% - 16px);margin:6px 8px 10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink2);font:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s}
+.signout:hover{background:#FDF3F2;border-color:#E7C2C2;color:#C0392B;transform:translateY(-1px)}
+.signout:active{transform:scale(.98)}
+.signout svg{flex:none;transition:transform .2s}
+.signout:hover svg{transform:translateX(2px)}
 /* --- empty dashboard: upload prompt + getting-started checklist --- */
 .eh{position:relative;overflow:hidden;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#fff 25%,#F3F0FF),radial-gradient(circle at 88% 15%,#E9E3FF,transparent 55%);border:1px solid #E3DDFC}
 .eh .ehArt{display:flex;gap:10px;font-size:32px;line-height:1}
@@ -308,7 +314,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
  <nav id="nav"></nav>
  <div class="premium"><b>Exam week plan</b><small>Let the assistant propose a schedule.</small><button data-go="2">Generate plan</button></div>
  <div class="prof" id="profBtn" data-act="editProfile" role="button" tabindex="0" aria-label="Edit your profile"><div class="av" id="sbAv">?</div><div style="min-width:0"><div style="font-size:13px;font-weight:500" id="sbName">Your name</div><div style="font-size:12px;color:var(--ink3)" id="sbProg">Tap to set up</div></div></div>
- <button class="lnk" data-act="logout" style="margin:6px 8px 10px;text-align:left">Sign out</button>
+ <button class="signout" data-act="logout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sign out</span></button>
 </aside>
 <main>
 <div id="banner" class="banner" hidden></div>
