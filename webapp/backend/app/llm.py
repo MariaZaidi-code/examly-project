@@ -58,13 +58,20 @@ def _call_openai_compatible(cfg, system, user, timeout):
                               headers={"Authorization": "Bearer " + cfg["key"]},
                               json={"model": model,
                                     "messages": [{"role": "system", "content": system},
-                                                 {"role": "user", "content": user}]},
+                                                 {"role": "user", "content": user}],
+                                    "max_tokens": 1024},
                               timeout=per)
             if _is_auth_failure(r):
                 _remember_bad_key(cfg["key"])     # same key for every model: stop now
                 r.raise_for_status()
             r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"]
+            msg = r.json()["choices"][0]["message"]
+            text = (msg.get("content") or "").strip()
+            if not text:                         # reasoning models (gpt-oss etc.) put text in `reasoning`
+                text = (msg.get("reasoning") or "").strip()
+            if not text:
+                raise RuntimeError("provider returned no text")
+            return text
         except Exception as e:                    # noqa: BLE001 - try the next model
             last = e
             if _bad_key_now(cfg["key"]):
@@ -103,6 +110,7 @@ def _call_gemini(cfg, system, user, timeout):
 
 
 _handlers["grok"] = _call_openai_compatible
+_handlers["omni"] = _call_openai_compatible
 _handlers["gemini"] = _call_gemini
 _handlers["custom"] = _call_openai_compatible    # legacy EXAMLY_LLM_* is OpenAI-compatible
 

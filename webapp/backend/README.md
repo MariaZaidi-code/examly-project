@@ -15,17 +15,19 @@ Copy `.env.example` to `.env` (gitignored) or set environment variables — proc
 
 | Setting | Default | Meaning |
 |---|---|---|
+| `OMNI_KEY_FILE` / `OMNI_API_KEY` | – | OmniRoute key: path to a text file (localhost gateway) or the key directly |
+| `OMNI_BASE_URL` / `OMNI_MODEL` | `http://localhost:20128/v1` / `free-fast` | OpenAI-compatible endpoint (comma-separated model list = tried in order) |
 | `GROK_KEY_FILE` / `GROK_API_KEY` | – | Grok (xAI) key: path to a text file, or the key directly as an env var |
 | `GROK_BASE_URL` / `GROK_MODEL` | `https://api.x.ai/v1` / `grok-4-fast` | OpenAI-compatible endpoint (comma-separated model list = tried in order) |
 | `GEMINI_KEY_FILE` / `GEMINI_API_KEY` | – | Gemini key: file path or env var |
 | `GEMINI_BASE_URL` / `GEMINI_MODEL` | Google `v1beta` / `gemini-3.6-flash,gemini-3.5-flash` | generateContent endpoint + model fallback list |
-| `LLM_PROVIDER_ORDER` | `grok,gemini` | Provider chain, tried in order |
+| `LLM_PROVIDER_ORDER` | `omni,grok,gemini` | Provider chain, tried in order |
 | `LLM_TIMEOUT_S` / `LLM_TOTAL_S` | `30` / `45` | Per-request timeout / hard budget for the whole chain |
 | `MAX_UPLOAD_MB` | `25` | Per-file upload limit (returns 413 above it) |
 | `EXAMLY_DISABLE_LLM` | `0` | `1` forces extractive answers (used by tests) |
 | `EXAMLY_LLM_URL/KEY/MODEL` | – | Optional legacy OpenAI-compatible provider, tried first |
 
-The assistant answers via the chain (Grok → Gemini) with numbered citations; if no provider answers inside the budget it falls back to extractive answers from retrieved passages, so the app works offline. The status pill reports the live chain (`Grok + Gemini ready`).
+The assistant answers via the chain (OmniRoute -> Grok -> Gemini) with numbered citations; if no provider answers inside the budget it falls back to extractive answers from retrieved passages. The status pill reports the live chain.
 The app starts empty. Files: pdf, txt, md, pptx, ppt (25 MB max).
 
 ## Endpoints (all JSON under /api)

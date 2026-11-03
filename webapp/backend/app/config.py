@@ -103,6 +103,10 @@ def grok_key():
     return _key_from_env_or_file(("GROK_API_KEY", "XAI_API_KEY"), "GROK_KEY_FILE")
 
 
+def omni_key():
+    return _key_from_env_or_file(("OMNI_API_KEY", "OMNIRoute_API_KEY", "OMNIROUTE_API_KEY"), "OMNI_KEY_FILE")
+
+
 def gemini_key():
     return _key_from_env_or_file(("GEMINI_API_KEY", "GOOGLE_API_KEY"), "GEMINI_KEY_FILE")
 
@@ -117,6 +121,10 @@ def provider_config(name):
         key = gemini_key()
         base = settings("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
         model = settings("GEMINI_MODEL", "gemini-3.5-flash")
+    elif name == "omni":                            # OmniRoute (OpenAI-compatible local gateway)
+        key = omni_key()
+        base = settings("OMNI_BASE_URL", "http://localhost:20128/v1")
+        model = settings("OMNI_MODEL", "free-fast")
     elif name == "custom":                           # legacy OpenAI-compatible env config
         key, base = (settings("EXAMLY_LLM_KEY"), settings("EXAMLY_LLM_URL"))
         model = settings("EXAMLY_LLM_MODEL", "gpt-4o-mini")
