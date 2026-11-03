@@ -60,7 +60,6 @@ nav button:hover{background:#F6F5FD;transform:translateX(2px)}nav button:hover:b
 nav button.on{background:var(--soft);color:var(--acc);font-weight:500}nav button.on:before{background:var(--acc);box-shadow:0 0 0 4px rgba(108,86,232,.15)}
 .sc{border:0;background:#F7F6FD;border-radius:12px}
 .premium{margin-top:10px;border-radius:14px;padding:14px;color:#fff;background:linear-gradient(135deg,#6C56E8,#4B3BC0);position:relative;overflow:hidden}
-.premium:after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.14);animation:drift 7s ease-in-out infinite alternate}
 .premium b{display:block;font-size:13.5px}.premium small{opacity:.8;font-size:12px;display:block;margin:2px 0 10px}.premium button{all:unset;cursor:pointer;background:#fff;color:#4B3BC0;font-weight:500;font-size:12.5px;padding:6px 12px;border-radius:8px;transition:transform .15s}.premium button:hover{transform:translateY(-1px)}
 @keyframes drift{to{transform:translate(-24px,20px)}}
 .panel{border:0;border-radius:16px;box-shadow:0 2px 14px rgba(70,60,140,.06);transition:transform .22s,box-shadow .22s;padding:18px}
@@ -74,7 +73,7 @@ nav button.on{background:var(--soft);color:var(--acc);font-weight:500}nav button
 .dash{display:grid;grid-template-columns:1.25fr 1fr 290px;gap:14px;align-items:start}
 .c1{grid-column:1}.c2{grid-column:2}.c3{grid-column:3;grid-row:1/span 3;display:grid;gap:14px}.wide{grid-column:1/3}
 .big{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.1}.up{color:#2F9E6B;font-size:12px}
-.chart{height:150px;gap:14px}.chart i{background:linear-gradient(180deg,#B7ABF6,#9585F0);border-radius:8px 8px 0 0;animation-delay:calc(var(--k,0)*70ms);transition:filter .2s,transform .2s}.chart i.hi{background:linear-gradient(180deg,#7C68F0,#4B3BC0)}.chart div:hover i{filter:brightness(1.08);transform:scaleY(1.04)}
+.chart{height:150px;gap:14px}.chart i{background:linear-gradient(180deg,#B7ABF6,#9585F0);border-radius:8px 8px 0 0;animation-delay:calc(var(--k,0)*70ms);transition:filter .2s,transform .2s}.chart i.hi{background:linear-gradient(180deg,#7C68F0,#4B3BC0)}.chart div:hover i{filter:brightness(1.06)}
 .chart i:after{content:attr(data-v);display:block;font-size:10px;color:#fff;padding-top:4px;opacity:0;transition:opacity .2s}.chart div:hover i:after{opacity:1}
 .ring{position:relative;width:120px;height:120px;margin:4px auto 10px}.ring svg{transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:9;stroke-linecap:round}.ring .t{stroke:#ECE9FB}.ring .f{stroke:url(#rg);stroke-dasharray:314;stroke-dashoffset:314;animation:ringf 1.3s .2s cubic-bezier(.2,.7,.2,1) forwards}@keyframes ringf{to{stroke-dashoffset:100}}
 .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-weight:600}
@@ -82,8 +81,8 @@ nav button.on{background:var(--soft);color:var(--acc);font-weight:500}nav button
 .ic1{background:#E4DEFC;color:#5B47D6}.ic2{background:#FFE9D2;color:#D9822B}.ic3{background:#D7F2EA;color:#1F9A77}.ic4{background:#FFE3E0;color:#D6523F}
 .tabs{display:flex;gap:18px;font-size:13px;color:var(--ink3);margin:2px 0 12px;border-bottom:1px solid var(--line)}.tabs span{padding-bottom:8px;cursor:pointer;transition:color .2s}.tabs span:hover{color:var(--ink)}.tabs .on{color:var(--acc);border-bottom:2px solid var(--acc)}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.sj{border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .25s,box-shadow .25s;cursor:pointer;background:#fff}.sj:hover{transform:translateY(-4px);box-shadow:0 14px 26px -14px rgba(108,86,232,.45)}
-.th{height:84px;position:relative;overflow:hidden}.th:before,.th:after{content:"";position:absolute;border-radius:12px;background:rgba(255,255,255,.65);transition:transform .35s}.th:before{width:70px;height:44px;left:22px;top:20px}.th:after{width:44px;height:30px;right:20px;bottom:12px;background:rgba(255,255,255,.4)}.sj:hover .th:before{transform:translate(6px,-3px) rotate(-3deg)}.sj:hover .th:after{transform:translate(-6px,3px) rotate(3deg)}
+.sj{border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .25s,box-shadow .25s;cursor:pointer;background:#fff}.sj:hover{transform:translateY(-2px);box-shadow:0 10px 22px -14px rgba(108,86,232,.35)}
+.th{height:84px;position:relative;overflow:hidden}.th:before,.th:after{content:"";position:absolute;border-radius:12px;background:rgba(255,255,255,.65);transition:transform .35s}.th:before{width:70px;height:44px;left:22px;top:20px}.th:after{width:44px;height:30px;right:20px;bottom:12px;background:rgba(255,255,255,.4)}
 .th .pc{position:absolute;right:8px;bottom:8px;background:#1D1B33;color:#fff;font-size:10.5px;padding:1px 7px;border-radius:6px;z-index:1}
 .t1{background:linear-gradient(135deg,#E3DDFC,#CFC6F9)}.t2{background:linear-gradient(135deg,#D6F1E7,#BDE7D8)}.t3{background:linear-gradient(135deg,#FFE7D3,#FFD3B0)}
 .sj .bd{padding:10px 12px}.sj .bd b{font-size:13px;font-weight:500;display:block}.sj .bd small{font-size:11.5px;color:var(--ink3)}
@@ -103,10 +102,7 @@ nav button.on{background:var(--soft);color:var(--acc);font-weight:500}nav button
 @media(max-width:1100px){.dash{grid-template-columns:1fr 1fr}.c3{grid-column:1/3;grid-row:auto}.wide{grid-column:1/3}}
 @media(max-width:820px){aside{margin:0;border-radius:0;min-height:0}.dash,.cards{grid-template-columns:1fr}.c1,.c2,.c3,.wide{grid-column:1}.search{display:none}}
 
-body:before,body:after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(70px);pointer-events:none}
-body:before{width:520px;height:520px;left:180px;top:-160px;background:#DCD4FF;opacity:.7;animation:blob 14s ease-in-out infinite alternate}
-body:after{width:460px;height:460px;right:-100px;bottom:-140px;background:#FFE2CC;opacity:.65;animation:blob 17s ease-in-out infinite alternate-reverse}
-@keyframes blob{to{transform:translate(60px,40px) scale(1.12)}}
+
 h1{background:linear-gradient(90deg,#1D1B33,#5B47D6);-webkit-background-clip:text;background-clip:text;color:transparent}
 nav button:before{display:none}nav button svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
 nav button:hover svg{transform:scale(1.15) rotate(-4deg)}nav button.on{background:linear-gradient(90deg,#E9E4FF,#F4F1FF);box-shadow:inset 3px 0 0 var(--acc),0 6px 14px -10px rgba(108,86,232,.6)}
@@ -118,8 +114,8 @@ nav button:hover svg{transform:scale(1.15) rotate(-4deg)}nav button.on{backgroun
 .t1{background:radial-gradient(rgba(255,255,255,.55) 1.5px,transparent 1.6px) 0 0/14px 14px,linear-gradient(135deg,#E3DDFC,#BDB0F7)}
 .t2{background:radial-gradient(rgba(255,255,255,.55) 1.5px,transparent 1.6px) 0 0/14px 14px,linear-gradient(135deg,#D6F1E7,#9EDCC3)}
 .t3{background:radial-gradient(rgba(255,255,255,.55) 1.5px,transparent 1.6px) 0 0/14px 14px,linear-gradient(135deg,#FFE7D3,#FFC08F)}
-.th{height:96px}.th .pc{background:rgba(29,27,51,.9);backdrop-filter:none;box-shadow:0 4px 10px rgba(0,0,0,.18)}
-.premium{background:linear-gradient(120deg,#7C68F0,#4B3BC0,#9A5BE8,#4B3BC0);background-size:300% 100%;animation:shimmer 8s ease infinite}@keyframes shimmer{50%{background-position:100% 0}}
+.th{height:80px}.th .pc{background:rgba(29,27,51,.9);backdrop-filter:none;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.premium{background:linear-gradient(135deg,#7C68F0,#4B3BC0)}
 .btn.p{position:relative;overflow:hidden}.btn.p:after{content:"";position:absolute;top:0;left:-70%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg)}.btn.p:hover:after{left:130%;transition:left .6s}
 .ico{box-shadow:0 6px 12px -6px currentColor}.ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .stats>div{padding:8px 12px;border-radius:14px;transition:background .2s,transform .2s}.stats>div:hover{background:#F7F6FD;transform:translateY(-2px)}
@@ -128,7 +124,7 @@ nav button:hover svg{transform:scale(1.15) rotate(-4deg)}nav button.on{backgroun
 .mini .td{box-shadow:0 6px 12px -4px rgba(108,86,232,.7)}
 .bar i{box-shadow:0 0 10px rgba(139,119,245,.45)}
 .pill.ok{background:#E6F7EF;border-color:#BDE8D3;color:#1F8A5F}
-.sj .bd b{font-size:13.5px}.sj:hover .th:before{transform:translate(8px,-4px) rotate(-4deg)}
+.sj .bd b{font-size:13.5px}
 .todo{padding:9px 10px;border-radius:12px;transition:background .2s}.todo:hover{background:#F8F7FE}
 .av{background:linear-gradient(135deg,#8B77F5,#5B47D6);color:#fff}
 .msg .a{background:linear-gradient(135deg,#8B77F5,#5B47D6);color:#fff;border-radius:10px;box-shadow:0 6px 12px -6px rgba(108,86,232,.7)}.msg.u .a{background:#E9E8F4;color:#52506E;box-shadow:none}
@@ -549,7 +545,7 @@ function renderIntro(d,docs){
  const done=[(c.documents||0)>0,(c.answers||0)>0,(c.sessions||0)>0].filter(Boolean).length;
  if(!(docs&&docs.length)){
   box.hidden=false;
-  box.innerHTML='<div class="panel eh"><div class="ehArt"><span>\u{1F4C4}</span><span>\u{1F4DA}</span><span>\u2728</span></div><div class="ehTxt"><h2>Upload your first documents</h2><p>Examly builds quizzes, flashcards and grounded assistant answers from <b>your own notes</b>. Add a PDF, TXT, MD or PPTX file and everything lights up.</p><button class="btn p" data-go="5">Upload documents</button><div class="steps"><span><b>1</b> Upload notes</span><span><b>2</b> Take a quiz</span><span><b>3</b> Close your gaps</span></div></div></div>';
+  box.innerHTML='<div class="panel eh"><div class="ehTxt"><h2>Upload your first documents</h2><p>Examly builds quizzes, flashcards and grounded assistant answers from <b>your own notes</b>. Add a PDF, TXT, MD or PPTX file and everything lights up.</p><button class="btn p" data-go="5">Upload documents</button><div class="steps"><span><b>1</b> Upload notes</span><span><b>2</b> Take a quiz</span><span><b>3</b> Close your gaps</span></div></div></div>';
   return;
  }
  if(done<total){
@@ -720,13 +716,13 @@ async function focusToggle(){const b=$("#tb");if(FOCUS.id){clearInterval(FOCUS.i
 async function loadQuiz(){await refreshSubjects();if(S.prefill){const p=S.prefill;S.prefill=null;await startQuiz(p.sub,5,p.topic);return;}if(S.quiz){paintQuiz();return;}paintQuizSetup();}
 function paintQuizSetup(){
  const box=$("#quizBox");
- if(!S.subjects.length){box.innerHTML='<div class="panel quiz-hero"><div class="quiz-hero-art">📚</div><div class="empty">Upload notes under Study Materials first. Quizzes are built from your own files.</div><button class="btn p" data-go="5">Go to Study Materials</button></div>';return;}
- box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-icon">🎯</div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>15</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div class="quiz-tips"><span>💡 Tip: focus on a weak topic to target your gaps.</span></div></div>';
+ if(!S.subjects.length){box.innerHTML='<div class="panel quiz-hero"><div class="empty">Upload notes under Study Materials first. Quizzes are built from your own files.</div><button class="btn p" data-go="5">Go to Study Materials</button></div>';return;}
+ box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-icon">Q</div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>15</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div class="quiz-tips"><span>Tip: focus on a weak topic to target your gaps.</span></div></div>';
 }
 function paintQuiz(){
  const z=S.quiz,box=$("#quizBox");
  if(z.i>=z.qs.length){
-  if(!z.celebrated&&(z.qs.length===0||z.score/z.qs.length>=0.5)){z.celebrated=true;confetti();}
+  if(!z.celebrated&&(z.qs.length===0||z.score/z.qs.length>=0.5)){z.celebrated=true;}
   const pct=z.qs.length?Math.round(z.score/z.qs.length*100):0;
   const ringColor=pct>=80?"#2FBF7E":pct>=50?"#F29A3C":"#E5594A";
   box.innerHTML='<div class="panel quiz-result"><div class="quiz-result-ring"><svg viewBox="0 0 120 120" width="150" height="150"><circle class="t" cx="60" cy="60" r="50"/><circle class="f" cx="60" cy="60" r="50" style="stroke:'+ringColor+';stroke-dashoffset:'+(314-(314*pct/100))+';animation:none"/></svg><b>'+pct+'%</b></div><div class="quiz-result-txt"><h2 style="margin:0 0 4px;font-size:20px">'+(pct>=80?"Excellent!":pct>=50?"Good effort!":"Keep practising!")+'</h2><p style="margin:0 0 12px;color:var(--ink2)">You got <b>'+z.score+'</b> of <b>'+z.qs.length+'</b> correct.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="quizNew">New quiz</button><button class="btn" data-go="4">See weak topics</button></div></div></div>';
@@ -737,13 +733,13 @@ function paintQuiz(){
  const opts=q.options.map((o,k)=>{
   const ok=fb&&k===fb.correct_index,no=fb&&k===fb.chosen&&!fb.correct;
   const cls=ok?"quiz-opt correct":no?"quiz-opt wrong":"quiz-opt";
-  const mark=ok?"✓":no?"✗":"";
-  return '<label class="'+cls+'" data-act="quizOpt" data-i="'+k+'"><span class="quiz-opt-radio">'+(fb&&k===fb.chosen?"●":"○")+'</span><span class="quiz-opt-text">'+esc(o)+'</span><span class="quiz-opt-mark">'+mark+'</span></label>';
+  const mark="";
+  return '<label class="'+cls+'" data-act="quizOpt" data-i="'+k+'"><span class="quiz-opt-radio">'+(fb&&k===fb.chosen?"●":"○")+'</span><span class="quiz-opt-text">'+esc(o)+'</span><span class="quiz-opt-mark"></span></label>';
  }).join("");
  box.innerHTML='<div class="quiz-progress"><div class="quiz-progress-bar"><i style="width:'+pct+'%"></i></div><div class="quiz-progress-meta">Question '+(z.i+1)+' of '+z.qs.length+' · '+pct+'% complete</div></div>'+
   '<div class="panel quiz-question"><div class="quiz-q-num">Q'+(z.i+1)+'</div><div class="quiz-q-text">'+esc(q.prompt)+'</div></div>'+
   '<div class="quiz-opts">'+opts+"</div>"+
-  (fb?'<div class="panel quiz-feedback '+(fb.correct?"ok":"bad")+' pop"><div class="quiz-feedback-head">'+(fb.correct?"✓ Correct!":"✗ Not quite.")+'</div><div class="quiz-feedback-body">'+esc(fb.explanation||"")+'</div><div class="quiz-feedback-src">Source: '+esc(fb.source.file)+", p. "+fb.source.page+'</div></div><button class="btn p" style="margin-top:12px;width:100%" data-act="quizNext">'+(z.i+1<z.qs.length?"Next question →":"See results")+"</button>":"");
+  (fb?'<div class="panel quiz-feedback '+(fb.correct?"ok":"bad")+' pop"><div class="quiz-feedback-head">'+(fb.correct?"Correct":"Incorrect")+'</div><div class="quiz-feedback-body">'+esc(fb.explanation||"")+'</div><div class="quiz-feedback-src">Source: '+esc(fb.source.file)+", p. "+fb.source.page+'</div></div><button class="btn p" style="margin-top:12px;width:100%" data-act="quizNext">'+(z.i+1<z.qs.length?"Next question →":"See results")+"</button>":"");
 }
 async function startQuiz(subjectId,count,topic){const body={subject_id:subjectId,count:count};if(topic)body.topic=topic;const q=await send("/quizzes","POST",body);S.quiz={id:q.id,qs:q.questions,i:0,fb:null,score:0,busy:false};paintQuiz();}
 async function quizOpt(t){
