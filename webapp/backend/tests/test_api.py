@@ -132,9 +132,14 @@ def test_quiz_flow_and_weak_topics(api):
     assert requests.post(f"{api}/quizzes/{q['id']}/questions/{first['id']}/answer", json={"chosen": wrong}).status_code == 409
     v = requests.get(f"{api}/quizzes/{q['id']}").json()
     assert v["answered"] == 1 and v["questions"][0]["answered"] and "correct_index" in v["questions"][0]
+    trend = requests.get(api + "/analytics").json()["quiz_trend"]
+    point = next(x for x in trend if x["quiz_id"] == q["id"])
+    assert point == {"quiz_id": q["id"], "date": "2026-11-03",
+                     "score": 100 if a["correct"] else 0, "correct": int(a["correct"]),
+                     "answered": 1, "total": q["total"]}
     w = requests.get(api + "/weak-topics").json()
     assert w["ranked"][0]["answers"] == 1 and w["heatmap"]["rows"][0]["subject"] == "Database Systems"
-    assert len(requests.get(api + "/analytics").json()["quiz_trend"]) == 1
+    assert len(trend) == 1
 
 def test_topic_area_groups_heatmap(api):
     tid = requests.get(api + "/weak-topics").json()["ranked"][0]["topic_id"]

@@ -572,10 +572,13 @@ async def analytics(req):
         grouped = {r["day"]: r["minutes"] for r in db.rows(c, """SELECT l.day,COALESCE(SUM(l.minutes),0) minutes
             FROM study_log l WHERE l.day>=? AND (? IS NULL OR l.subject_id=?) GROUP BY l.day""", params)}
         days = [(start + dt.timedelta(days=i), grouped.get((start + dt.timedelta(days=i)).isoformat(), 0)) for i in range(window)]
-        qz = db.rows(c, """SELECT z.id, MIN(a.answered_at) at, AVG(a.correct)*100 score, COUNT(a.id) n
+        qz = db.rows(c, """SELECT z.id, MAX(a.answered_at) at, SUM(a.correct) correct, COUNT(a.id) n,
+            (SELECT COUNT(*) FROM questions all_q WHERE all_q.quiz_id=z.id) total
             FROM quizzes z JOIN questions q ON q.quiz_id=z.id JOIN answers a ON a.question_id=q.id
-            WHERE a.answered_at>=? AND (? IS NULL OR z.subject_id=?)
-            GROUP BY z.id ORDER BY at,z.id""", params)
+            WHERE (? IS NULL OR z.subject_id=?)
+              AND EXISTS (SELECT 1 FROM questions recent_q JOIN answers recent_a ON recent_a.question_id=recent_q.id
+                          WHERE recent_q.quiz_id=z.id AND recent_a.answered_at>=?)
+            GROUP BY z.id ORDER BY at,z.id""", (subject_id, subject_id, start.isoformat()))
         subj = db.rows(c, """SELECT s.name subject,
             ROUND(100.0*SUM(a.correct)/COUNT(a.id)) proficiency
             FROM quizzes z JOIN subjects s ON s.id=z.subject_id
@@ -586,7 +589,9 @@ async def analytics(req):
             "study_hours_30d": round(sum(m for _, m in days) / 60, 1),
             "active_days_30d": sum(1 for _, m in days if m > 0), "window_days": window,
             "current_streak": sv.streak(c),
-            "quiz_trend": [{"quiz_id": z["id"], "date": (z["at"] or "")[:10], "score": round(z["score"]), "answered": z["n"]} for z in qz],
+            "quiz_trend": [{"quiz_id": z["id"], "date": (z["at"] or "")[:10],
+                            "score": round(100 * z["correct"] / z["n"]) if z["n"] else 0,
+                            "correct": z["correct"], "answered": z["n"], "total": z["total"]} for z in qz],
             "subject_comparison": subj,
             "daily_minutes": [{"date": d.isoformat(), "minutes": m} for d, m in days],
             "filters": {"days": window, "subject_id": subject_id},

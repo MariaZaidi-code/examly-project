@@ -57,7 +57,7 @@ The app starts empty. Files: pdf, txt, md, pptx, ppt (25 MB max).
 | POST /review/{id} | grades a flashcard review for that topic: {correct: bool} -> updated schedule |
 | GET /flashcards?limit=20&subject_id=&document_id= | cards built from generated questions; `subject_id` scopes to the whole subject and `document_id` narrows to one file within it; {total, due_count, mastered, cards[], scope}; unknown scopes return 404 |
 | GET /activity | real assistant history plus stored profile, exams, weakest topics and review counts |
-| GET /analytics | study_hours_30d, active_days_30d, current_streak, quiz_trend, subject_comparison, daily_minutes |
+| GET /analytics | study_hours_30d, active_days_30d, current_streak, `quiz_trend[{quiz_id,date,score,correct,answered,total}]`, subject_comparison, daily_minutes; quiz score is calculated from answered questions, and graph points open the quiz review |
 | GET /analytics?days=7\|30\|90&subject_id= | filter study and quiz trends by period and subject |
 | GET /analytics/day?date=YYYY-MM-DD&subject_id= | daily drilldown for study logs, planner sessions and quiz results |
 | GET /export?format=json\|csv | download real profile, materials metadata, study logs, sessions and quiz results (JSON); study log (CSV) |
@@ -78,4 +78,4 @@ python ingest_sample.py --user ayesha --password ... # locked workspace
 
 It uploads `sample_materials/database_systems/*.md` (six notes), waits for indexing, and prints a table of status, pages and chunks. It exits non-zero unless all six are `indexed` with pages and chunks and the assistant cites one of them. Re-uploading a filename replaces that document (old chunks are removed), and documents left `indexing` by a crash are marked `failed` on the next start.
 
-Known gaps: no auth (single user), quiz questions are heuristic cloze unless extended with the LLM.
+Known limitations: one account per workspace (no per-user data isolation); quiz questions are heuristic cloze rather than free-form LLM-generated exams.
