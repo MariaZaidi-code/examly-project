@@ -230,6 +230,21 @@ async def study_log_add(req):
     return JSONResponse({"ok": True}, status_code=201)
 
 # ---- quizzes ----
+async def quizzes_list(req):
+    with db.conn() as c:
+        rows = db.rows(c, """SELECT z.id, z.subject_id, s.name subject, z.created_at,
+            (SELECT COUNT(*) FROM questions WHERE quiz_id=z.id) total,
+            (SELECT COUNT(*) FROM answers a JOIN questions q ON q.id=a.question_id WHERE q.quiz_id=z.id) answered,
+            (SELECT AVG(a.correct)*100 FROM answers a JOIN questions q ON q.id=a.question_id WHERE q.quiz_id=z.id) score
+            FROM quizzes z LEFT JOIN subjects s ON s.id=z.subject_id ORDER BY z.id DESC""")
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["score"] = round(d["score"], 1) if d.get("score") is not None else None
+        d["completed"] = (d.get("answered") or 0) >= (d.get("total") or 0) and (d.get("total") or 0) > 0
+        out.append(d)
+    return JSONResponse({"quizzes": out})
+
 async def quiz_create(req):
     d = await body(req)
     with db.conn() as c:
@@ -280,13 +295,21 @@ async def review_due(req):
     return JSONResponse({"count": len(due), "due": due})
 
 async def review_grade(req):
-    """Flashcard grading: the student marks a topic's card right or wrong."""
+    """Flashcard grading: correct (bool) or confidence in {hard, medium, easy}."""
     d = await body(req)
-    if not isinstance(d.get("correct"), bool): return err("correct must be true or false")
+    conf = d.get("confidence")
+    if conf is not None:
+        if conf not in ("hard", "medium", "easy"): return err("confidence must be hard, medium or easy")
+        quality = {"hard": 2, "medium": 4, "easy": 5}[conf]
+        correct = quality >= 3
+    else:
+        if not isinstance(d.get("correct"), bool): return err("correct must be true or false")
+        correct = d["correct"]
+        quality = None
     with db.conn() as c:
         t = db.one(c, "SELECT id FROM topics WHERE id=?", (req.path_params["id"],))
         if not t: return err("not found", 404)
-        rev = sv.sm2_update(c, t["id"], d["correct"])
+        rev = sv.sm2_update(c, t["id"], correct, quality=quality)
     return JSONResponse({"ok": True, "review": rev})
 
 async def flashcards(req):
@@ -456,6 +479,7 @@ routes = [
     Route("/api/sessions/{id:int}", session_patch, methods=["PATCH"]),
     Route("/api/sessions/{id:int}", session_delete, methods=["DELETE"]),
     Route("/api/study-log", study_log_add, methods=["POST"]),
+    Route("/api/quizzes", quizzes_list, methods=["GET"]),
     Route("/api/quizzes", quiz_create, methods=["POST"]),
     Route("/api/quizzes/{id:int}", quiz_get),
     Route("/api/quizzes/{id:int}/questions/{qid:int}/answer", quiz_answer, methods=["POST"]),

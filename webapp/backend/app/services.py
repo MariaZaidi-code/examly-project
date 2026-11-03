@@ -300,18 +300,21 @@ def band(p):
 REVIEW_START = (1, 3, 7)   # first successful intervals, in days
 MAX_INTERVAL = 180
 
-def sm2_update(c, topic_id, correct, day=None):
-    """Simplified SM-2: correct answers spread the next review out, a wrong answer resets it to tomorrow."""
+def sm2_update(c, topic_id, correct, day=None, quality=None):
+    """SM-2 with optional confidence (quality 0-5). correct=True -> quality 4 by default."""
     if not topic_id: return None
     day = day or db.today()
     r = db.one(c, "SELECT * FROM reviews WHERE topic_id=?", (topic_id,))
     ease, reps, interval, lapses = (r["ease"], r["reps"], r["interval_days"], r["lapses"]) if r else (2.5, 0, 0, 0)
-    if correct:
-        interval = REVIEW_START[reps] if reps < len(REVIEW_START) else max(interval + 1, round(interval * ease))
-        reps += 1
-    else:
+    if quality is None:
+        quality = 4 if correct else 1
+    if quality < 3:
         interval, reps, lapses = 1, 0, lapses + 1
         ease = max(1.3, ease - 0.2)
+    else:
+        interval = REVIEW_START[reps] if reps < len(REVIEW_START) else max(interval + 1, round(interval * ease))
+        reps += 1
+        ease = max(1.3, ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)))
     interval = min(interval, MAX_INTERVAL)
     due = (day + dt.timedelta(days=interval)).isoformat()
     c.execute("INSERT OR REPLACE INTO reviews(topic_id,ease,interval_days,reps,lapses,due,last_reviewed) VALUES(?,?,?,?,?,?,?)",

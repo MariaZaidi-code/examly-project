@@ -428,7 +428,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
  <div class="bar" style="width:100%;margin-bottom:6px"><i id="fcBar" style="width:0%"></i></div>
  <div class="s" style="font-size:12px;color:var(--ink3);margin-bottom:10px" id="fcn"></div>
  <div class="fc" id="fc"><div class="fs" id="fs">Loading...</div><div class="ft" id="ft"></div></div>
- <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="fsb" data-act="fcShow">Show answer</button><button class="btn" id="fg" style="display:none" data-act="fcGot">Got it</button><button class="btn" id="fa" style="display:none" data-act="fcAgain">Again</button><button class="btn sm" id="fs2" data-act="fcNext">Skip card</button></div>
+ <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="fsb" data-act="fcShow">Show answer</button><button class="btn" id="fh" style="display:none" data-act="fcHard">Hard</button><button class="btn" id="fm" style="display:none" data-act="fcMed">Medium</button><button class="btn" id="fe" style="display:none" data-act="fcEasy">Easy</button><button class="btn sm" id="fs2" data-act="fcNext">Skip card</button></div>
 </section>
 
 <section class="view" id="v8">
@@ -854,7 +854,7 @@ function paintFlash(){
    ?(scoped?"This document has no flashcards yet. Press \u201cBuild cards from this file\u201d and they will appear here."
           :"Take a quiz to build cards from your notes.")
    :(scoped?"No cards are due for this document right now.":"No cards are due right now. Take a quiz to build more cards.");
-  $("#fsb").style.display="none";$("#fg").style.display=$("#fa").style.display=$("#fs2").style.display="none";
+  $("#fsb").style.display="none";$("#fh").style.display=$("#fm").style.display=$("#fe").style.display=$("#fs2").style.display="none";
   $("#fcn").textContent="0 cards due"+(scoped?" from "+z.data.scope.filename:"");
   return;
  }
@@ -864,13 +864,13 @@ function paintFlash(){
  $("#ft").textContent=flipped?c.back:c.front;
  $("#fsb").style.display=flipped?"none":"";
  $("#fs2").style.display="";
- $("#fg").style.display=$("#fa").style.display=flipped?"":"none";
+ $("#fh").style.display=$("#fm").style.display=$("#fe").style.display=flipped?"":"none";
  $("#fcn").textContent=(cards.length-z.i)+" cards left in this batch"+(scoped?" from "+z.data.scope.filename:"")+(c.source&&c.source.file?", source "+c.source.file:"");
 }
-async function gradeCard(correct){
+async function gradeCard(confidence){
  const z=S.flash;const c=z&&z.data.cards[z.i];if(!c)return;
- await send("/review/"+c.topic_id,"POST",{correct:correct});
- toast(correct?"Got it. Scheduled further out.":"Again. Back to tomorrow.");
+ await send("/review/"+c.topic_id,"POST",{confidence:confidence});
+ toast(confidence==="easy"?"Easy. Scheduled further out.":confidence==="medium"?"Medium. Scheduled ahead.":"Hard. Back to tomorrow.");
  await loadFlashcards();
 }
 
@@ -926,8 +926,9 @@ const ACTIONS={
  sessionStatus:async t=>{await send("/sessions/"+t.dataset.id,"PATCH",{status:t.dataset.status});await loadPlanner();refreshDash().catch(()=>{});},
  sessionDelete:async t=>{if(!confirm("Delete this session?"))return;await send("/sessions/"+t.dataset.id,"DELETE");await loadPlanner();},
  fcShow:()=>{if(S.flash){S.flash.flipped=true;paintFlash();}},
- fcGot:()=>gradeCard(true).catch(fail),
- fcAgain:()=>gradeCard(false).catch(fail),
+ fcHard:()=>gradeCard("hard").catch(fail),
+ fcMed:()=>gradeCard("medium").catch(fail),
+ fcEasy:()=>gradeCard("easy").catch(fail),
  fcNext:()=>{if(S.flash&&S.flash.data.cards.length){S.flash.i=(S.flash.i+1)%S.flash.data.cards.length;S.flash.flipped=false;paintFlash();}},
  fcBuild:async()=>{
   const id=+S.fcDoc;if(!id){toast("Choose a document first.",true);return;}
