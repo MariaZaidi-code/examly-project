@@ -259,6 +259,32 @@ def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
         if qid: return qid
     return None
 
+def generate_standalone_cards(c, subject_id, count=8, document_ids=None):
+    """Build flashcards directly from notes (quiz_id=NULL). Returns new card count or None."""
+    sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"
+    args = [subject_id]
+    if document_ids: sql += " AND d.id IN (%s)" % ",".join("?" * len(document_ids)); args += document_ids
+    chunks = db.rows(c, sql, args)
+    if not chunks: return None
+    pool = list({w for ch in chunks for w in re.findall(r"[A-Za-z]{6,}", ch["text"]) if w.lower() not in STOP})
+    random.shuffle(chunks)
+    existing = {q["explanation"] for q in db.rows(c, "SELECT q.explanation FROM questions q JOIN topics t ON t.id=q.topic_id WHERE q.quiz_id IS NULL AND t.subject_id=?", (subject_id,))}
+    made = set(existing)
+    new_count = 0
+    for ch in chunks * 3:
+        if new_count >= count: break
+        m = make_cloze(ch["text"], pool, None)
+        if not m or m[3] in made: continue
+        prompt, opts, ci, sent = m
+        tname = os.path.splitext(ch["filename"])[0].replace("_", " ")
+        c.execute("INSERT OR IGNORE INTO topics(subject_id,name) VALUES(?,?)", (subject_id, tname))
+        tid = db.one(c, "SELECT id FROM topics WHERE subject_id=? AND name=?", (subject_id, tname))["id"]
+        c.execute("INSERT INTO questions(quiz_id,position,prompt,options,correct_index,explanation,source_file,source_page,topic_id) VALUES(?,?,?,?,?,?,?,?,?)",
+                  (None, new_count + 1, prompt, json.dumps(opts), ci, sent, ch["filename"], ch["page"], tid))
+        made.add(sent); new_count += 1
+    if new_count == 0: return None
+    return new_count
+
 def public_question(q, reveal=False):
     out = {"id": q["id"], "position": q["position"], "prompt": q["prompt"], "options": db.jloads(q["options"], [])}
     if reveal:

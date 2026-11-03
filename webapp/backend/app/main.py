@@ -312,6 +312,18 @@ async def review_grade(req):
         rev = sv.sm2_update(c, t["id"], correct, quality=quality)
     return JSONResponse({"ok": True, "review": rev})
 
+async def flashcards_build(req):
+    d = await body(req)
+    try: sid = int(d.get("subject_id"))
+    except (TypeError, ValueError): return err("subject_id required")
+    try: count = max(1, min(int(d.get("count", 8)), 20))
+    except (TypeError, ValueError): return err("count must be an integer")
+    doc_ids = d.get("document_ids")
+    with db.conn() as c:
+        n = sv.generate_standalone_cards(c, sid, count, doc_ids)
+    if not n: return err("No usable text in this subject's indexed materials. Upload notes first.", 422)
+    return JSONResponse({"built": n}, status_code=201)
+
 async def flashcards(req):
     try: limit = max(1, min(int(req.query_params.get("limit", 20)), 50))
     except ValueError: return err("limit must be an integer")
@@ -489,6 +501,7 @@ routes = [
     Route("/api/review/due", review_due),
     Route("/api/review/{id:int}", review_grade, methods=["POST"]),
     Route("/api/flashcards", flashcards),
+    Route("/api/flashcards/build", flashcards_build, methods=["POST"]),
     Route("/api/activity", activity),
     Route("/api/weak-topics", weak_topics),
     Route("/api/analytics", analytics),

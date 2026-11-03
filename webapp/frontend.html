@@ -1071,8 +1071,8 @@ const ACTIONS={
   if(!doc){toast("That document is no longer in your library.",true);return;}
   const btn=$("#fcBuild");btn.disabled=true;
   try{
-   const q=await send("/quizzes","POST",{subject_id:doc.subject_id,count:6,document_ids:[doc.id]});
-   toast("Built "+(q.questions||[]).length+" flashcards from "+doc.filename);
+   const r=await send("/flashcards/build","POST",{subject_id:doc.subject_id,count:8,document_ids:[doc.id]});
+   toast("Built "+r.built+" flashcards from "+doc.filename);
    await loadFlashcards();
   }finally{btn.disabled=false;}
  },
