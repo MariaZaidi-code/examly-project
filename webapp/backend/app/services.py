@@ -200,26 +200,47 @@ def make_cloze(text, pool, focus=None):
         return prompt, opts, opts.index(target.lower()), s
     return None
 
-def _build_quiz(c, subject_id, chunks, count, topic, focus=None):
+def _build_quiz(c, subject_id, chunks, count, topic, focus=None, quiz_id=None, existing_sents=None):
+    existing_sents = set(existing_sents or [])
     pool = list({w for ch in chunks for w in re.findall(r"[A-Za-z]{6,}", ch["text"]) if w.lower() not in STOP})
     random.shuffle(chunks)
-    made = []
-    c.execute("INSERT INTO quizzes(subject_id,created_at) VALUES(?,?)", (subject_id, db.now_iso()))
-    quiz_id = c.execute("SELECT last_insert_rowid()").fetchone()[0]
+    made = set(existing_sents)
+    new_count = 0
+    created = False
+    if quiz_id is None:
+        c.execute("INSERT INTO quizzes(subject_id,created_at) VALUES(?,?)", (subject_id, db.now_iso()))
+        quiz_id = c.execute("SELECT last_insert_rowid()").fetchone()[0]
+        created = True
+    start_pos = db.one(c, "SELECT COALESCE(MAX(position),0) n FROM questions WHERE quiz_id=?", (quiz_id,))["n"]
     for ch in chunks * 3:
-        if len(made) >= count: break
+        if new_count >= count: break
         m = make_cloze(ch["text"], pool, focus)
-        if not m or any(m[3] == x for x in made): continue
+        if not m or m[3] in made: continue
         prompt, opts, ci, sent = m
         tname = topic or os.path.splitext(ch["filename"])[0].replace("_", " ")
         c.execute("INSERT OR IGNORE INTO topics(subject_id,name) VALUES(?,?)", (subject_id, tname))
         tid = db.one(c, "SELECT id FROM topics WHERE subject_id=? AND name=?", (subject_id, tname))["id"]
         c.execute("INSERT INTO questions(quiz_id,position,prompt,options,correct_index,explanation,source_file,source_page,topic_id) VALUES(?,?,?,?,?,?,?,?,?)",
-                  (quiz_id, len(made) + 1, prompt, json.dumps(opts), ci, sent, ch["filename"], ch["page"], tid))
-        made.append(sent)
-    if not made:
-        c.execute("DELETE FROM quizzes WHERE id=?", (quiz_id,)); return None
+                  (quiz_id, start_pos + new_count + 1, prompt, json.dumps(opts), ci, sent, ch["filename"], ch["page"], tid))
+        made.add(sent); new_count += 1
+    if new_count == 0:
+        if created:
+            c.execute("DELETE FROM quizzes WHERE id=?", (quiz_id,))
+        return None
     return quiz_id
+
+def extend_quiz(c, quiz_id, count=5, document_ids=None):
+    """Append `count` more questions to an existing quiz."""
+    qz = db.one(c, "SELECT * FROM quizzes WHERE id=?", (quiz_id,))
+    if not qz: return None
+    subject_id = qz["subject_id"]
+    sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"
+    args = [subject_id]
+    if document_ids: sql += " AND d.id IN (%s)" % ",".join("?" * len(document_ids)); args += document_ids
+    chunks = db.rows(c, sql, args)
+    if not chunks: return None
+    existing = {q["explanation"] for q in db.rows(c, "SELECT explanation FROM questions WHERE quiz_id=?", (quiz_id,))}
+    return _build_quiz(c, subject_id, list(chunks), count, None, None, quiz_id=quiz_id, existing_sents=existing)
 
 def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
     sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"

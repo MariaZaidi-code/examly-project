@@ -244,6 +244,18 @@ async def quiz_get(req):
     with db.conn() as c: v = sv.quiz_view(c, req.path_params["id"])
     return JSONResponse(v) if v else err("not found", 404)
 
+async def quiz_extend(req):
+    qid = req.path_params["id"]
+    d = await body(req)
+    try: count = max(1, min(int(d.get("count", 5)), 20))
+    except (TypeError, ValueError): return err("count must be an integer")
+    with db.conn() as c:
+        v = sv.quiz_view(c, qid)
+        if not v: return err("not found", 404)
+        new_qid = sv.extend_quiz(c, qid, count, d.get("document_ids"))
+        if not new_qid: return err("No more usable text for additional questions.", 422)
+    return JSONResponse(sv.quiz_view(c, qid), status_code=200)
+
 async def quiz_answer(req):
     d = await body(req)
     with db.conn() as c:
@@ -447,6 +459,7 @@ routes = [
     Route("/api/quizzes", quiz_create, methods=["POST"]),
     Route("/api/quizzes/{id:int}", quiz_get),
     Route("/api/quizzes/{id:int}/questions/{qid:int}/answer", quiz_answer, methods=["POST"]),
+    Route("/api/quizzes/{id:int}/extend", quiz_extend, methods=["POST"]),
     Route("/api/topics/{id:int}", topic_update, methods=["PUT"]),
     Route("/api/review/due", review_due),
     Route("/api/review/{id:int}", review_grade, methods=["POST"]),

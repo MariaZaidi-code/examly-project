@@ -210,7 +210,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
 .quiz-hero-art{font-size:44px;animation:floaty 3.2s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(108,86,232,.25))}
 .quiz-setup{padding:22px}
 .quiz-setup-head{display:flex;gap:14px;align-items:center}
-.quiz-setup-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,#E3DDFC,#CFC6F9);box-shadow:0 6px 14px -6px rgba(108,86,232,.5)}
+.quiz-setup-mark{width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,#8B77F5,#5B47D6);box-shadow:0 6px 14px -6px rgba(108,86,232,.5);position:relative;overflow:hidden}.quiz-setup-mark:before,.quiz-setup-mark:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.25)}.quiz-setup-mark:before{width:26px;height:26px;left:-6px;top:-6px}.quiz-setup-mark:after{width:18px;height:18px;right:-4px;bottom:-4px;background:rgba(255,255,255,.15)}
 .quiz-tips{margin-top:14px;padding:10px 12px;border-radius:10px;background:#F7F6FD;font-size:12.5px;color:var(--ink3)}
 .quiz-progress{margin-bottom:14px}
 .quiz-progress-bar{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:6px}
@@ -306,8 +306,6 @@ dialog h3{margin:0 0 4px;font-size:16px}
 <aside>
  <div class="brand"><div class="mark">E</div>Examly</div>
  <nav id="nav"></nav>
- <div class="sc"><small>Next exam</small><b id="sbExam">No exam added</b></div>
- <div class="sc"><small>Study streak</small><b id="sbStreak">0 days</b></div>
  <div class="premium"><b>Exam week plan</b><small>Let the assistant propose a schedule.</small><button data-go="2">Generate plan</button></div>
  <div class="prof" id="profBtn" data-act="editProfile" role="button" tabindex="0" aria-label="Edit your profile"><div class="av" id="sbAv">?</div><div style="min-width:0"><div style="font-size:13px;font-weight:500" id="sbName">Your name</div><div style="font-size:12px;color:var(--ink3)" id="sbProg">Tap to set up</div></div></div>
  <button class="lnk" data-act="logout" style="margin:6px 8px 10px;text-align:left">Sign out</button>
@@ -512,7 +510,7 @@ const fail=e=>toast(e&&e.message?e.message:String(e),true);
 
 async function refreshSubjects(){S.subjects=await api("/subjects");$("#subjList").innerHTML=S.subjects.map(s=>'<option value="'+esc(s.name)+'">').join("");}
 const subjOptions=(sel,all)=>(all?'<option value="">All subjects</option>':"")+S.subjects.map(s=>'<option value="'+s.id+'"'+(String(sel)===String(s.id)?" selected":"")+">"+esc(s.name)+"</option>").join("");
-function paintSidebar(d){const p=d.profile||{};S.profile=p;$("#sbExam").textContent=d.next_exam?d.next_exam.subject+(d.next_exam.days_left===0?" today":" in "+plural(d.next_exam.days_left,"day")):"No exam added";$("#sbStreak").textContent=plural(d.streak_days||0,"day");S.initial=initial();$("#sbAv").textContent=S.initial;$("#sbName").textContent=displayName();$("#sbProg").textContent=p.program||(S.user?"@"+S.user.username:"Tap to set up");}
+function paintSidebar(d){const p=d.profile||{};S.profile=p;S.initial=initial();$("#sbAv").textContent=S.initial;$("#sbName").textContent=displayName();$("#sbProg").textContent=p.program||(S.user?"@"+S.user.username:"Tap to set up");}
 async function refreshDash(){const d=await api("/dashboard");paintSidebar(d);return d;}
 
 function openForm(title,fields,submitLabel,onSubmit){
@@ -717,7 +715,7 @@ async function loadQuiz(){await refreshSubjects();if(S.prefill){const p=S.prefil
 function paintQuizSetup(){
  const box=$("#quizBox");
  if(!S.subjects.length){box.innerHTML='<div class="panel quiz-hero"><div class="empty">Upload notes under Study Materials first. Quizzes are built from your own files.</div><button class="btn p" data-go="5">Go to Study Materials</button></div>';return;}
- box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-icon">Q</div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>15</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div class="quiz-tips"><span>Tip: focus on a weak topic to target your gaps.</span></div></div>';
+ box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-mark"></div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>20</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div class="quiz-tips"><span>Tip: focus on a weak topic to target your gaps.</span></div></div>';
 }
 function paintQuiz(){
  const z=S.quiz,box=$("#quizBox");
@@ -725,7 +723,7 @@ function paintQuiz(){
   if(!z.celebrated&&(z.qs.length===0||z.score/z.qs.length>=0.5)){z.celebrated=true;}
   const pct=z.qs.length?Math.round(z.score/z.qs.length*100):0;
   const ringColor=pct>=80?"#2FBF7E":pct>=50?"#F29A3C":"#E5594A";
-  box.innerHTML='<div class="panel quiz-result"><div class="quiz-result-ring"><svg viewBox="0 0 120 120" width="150" height="150"><circle class="t" cx="60" cy="60" r="50"/><circle class="f" cx="60" cy="60" r="50" style="stroke:'+ringColor+';stroke-dashoffset:'+(314-(314*pct/100))+';animation:none"/></svg><b>'+pct+'%</b></div><div class="quiz-result-txt"><h2 style="margin:0 0 4px;font-size:20px">'+(pct>=80?"Excellent!":pct>=50?"Good effort!":"Keep practising!")+'</h2><p style="margin:0 0 12px;color:var(--ink2)">You got <b>'+z.score+'</b> of <b>'+z.qs.length+'</b> correct.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="quizNew">New quiz</button><button class="btn" data-go="4">See weak topics</button></div></div></div>';
+  box.innerHTML='<div class="panel quiz-result"><div class="quiz-result-ring"><svg viewBox="0 0 120 120" width="150" height="150"><circle class="t" cx="60" cy="60" r="50"/><circle class="f" cx="60" cy="60" r="50" style="stroke:'+ringColor+';stroke-dashoffset:'+(314-(314*pct/100))+';animation:none"/></svg><b>'+pct+'%</b></div><div class="quiz-result-txt"><h2 style="margin:0 0 4px;font-size:20px">'+(pct>=80?"Excellent!":pct>=50?"Good effort!":"Keep practising!")+'</h2><p style="margin:0 0 12px;color:var(--ink2)">You got <b>'+z.score+'</b> of <b>'+z.qs.length+'</b> correct.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="quizMore" data-n="5">Add 5 more</button><button class="btn" data-act="quizMore" data-n="10">Add 10 more</button><button class="btn" data-act="quizNew">New quiz</button><button class="btn" data-go="4">Weak topics</button></div><div class="quiz-more-hint">Want to keep going? Add more questions from the same material.</div></div></div>';
   return;
  }
  const q=z.qs[z.i],fb=z.fb;
@@ -900,6 +898,21 @@ const ACTIONS={
  quizStart:()=>startQuiz(+$("#qSub").value,+$("#qCount").value,$("#qTopic").value.trim()),
  quizOpt:quizOpt,
  quizNext:()=>{S.quiz.i++;S.quiz.fb=null;paintQuiz();},
+ quizMore:async t=>{
+  const z=S.quiz;if(!z)return;
+  const n=+(t.dataset.n||5);
+  try{
+   const q=await send("/quizzes/"+z.id+"/extend","POST",{count:n});
+   const have=new Set(z.qs.map(x=>x.id));
+   const added=(q.questions||[]).filter(x=>!have.has(x.id));
+   if(!added.length){toast("No more questions available from this material.",true);return;}
+   z.qs=z.qs.concat(added);
+   z.i=z.qs.length-added.length;
+   z.fb=null;z.celebrated=false;
+   toast("Added "+added.length+" more questions.");
+   paintQuiz();
+  }catch(e){fail(e);}
+ },
  quizNew:()=>{S.quiz=null;paintQuizSetup();},
  pickFile:()=>{const i=$("#mFile");if(i)i.click();},
  upload:upload,
