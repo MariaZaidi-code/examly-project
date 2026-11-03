@@ -253,6 +253,26 @@ dialog h3{margin:0 0 4px;font-size:16px}
 .signout:active{transform:scale(.98)}
 .signout svg{flex:none;transition:transform .2s}
 .signout:hover svg{transform:translateX(2px)}
+/* --- quiz history & review --- */
+.quiz-hist-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px;transition:transform .18s,box-shadow .18s}
+.quiz-hist-row:hover{transform:translateY(-1px);box-shadow:0 6px 14px -10px rgba(108,86,232,.4)}
+.quiz-hist-main{flex:1;min-width:0}
+.quiz-hist-main b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.quiz-hist-main small{display:block;font-size:12px;color:var(--ink3);margin-top:2px}
+.quiz-hist-score{font-size:18px;font-weight:700;min-width:48px;text-align:right}
+.quiz-hist-score.good{color:#1F8A5F}
+.quiz-hist-score.mid{color:#B9822F}
+.quiz-hist-score.low{color:#C0392B}
+.quiz-review-q{display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.quiz-review-q:first-child{border-top:0}
+.quiz-review-num{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,#8B77F5,#5B47D6);flex:none}
+.quiz-review-body{flex:1;min-width:0}
+.quiz-review-prompt{font-size:14.5px;font-weight:500;color:var(--ink);margin-bottom:8px;white-space:pre-wrap}
+.quiz-review-opt{padding:6px 10px;border-radius:8px;font-size:13px;color:var(--ink2);margin-bottom:4px;background:#F7F6FD}
+.quiz-review-opt.correct{background:var(--okbg);color:#1F8A5F;font-weight:600}
+.quiz-review-opt.wrong{background:#F8E9E9;color:#C0392B}
+.quiz-review-exp{margin-top:8px;font-size:13px;color:var(--ink2);line-height:1.5}
+.quiz-review-src{font-size:11.5px;color:var(--ink3);margin-top:4px}
 /* --- empty dashboard: upload prompt + getting-started checklist --- */
 .eh{position:relative;overflow:hidden;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#fff 25%,#F3F0FF),radial-gradient(circle at 88% 15%,#E9E3FF,transparent 55%);border:1px solid #E3DDFC}
 .eh .ehArt{display:flex;gap:10px;font-size:32px;line-height:1}
@@ -721,7 +741,15 @@ async function loadQuiz(){await refreshSubjects();if(S.prefill){const p=S.prefil
 function paintQuizSetup(){
  const box=$("#quizBox");
  if(!S.subjects.length){box.innerHTML='<div class="panel quiz-hero"><div class="empty">Upload notes under Study Materials first. Quizzes are built from your own files.</div><button class="btn p" data-go="5">Go to Study Materials</button></div>';return;}
- box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-mark"></div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>20</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div class="quiz-tips"><span>Tip: focus on a weak topic to target your gaps.</span></div></div>';
+ box.innerHTML='<div class="panel quiz-setup"><div class="quiz-setup-head"><div class="quiz-setup-mark"></div><div><div class="ph2" style="margin:0"><span>New quiz</span><span>Fill-in-the-blank from your notes</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:4px">Questions are generated from the sentences in your own materials.</div></div></div><div class="frm" style="margin-top:14px"><div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">'+subjOptions(S.subjects[0].id)+'</select></div><div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option selected>10</option><option>20</option></select></div><div><label class="lbl" for="qTopic">Focus on a topic (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div><div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz →</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px"><div class="quiz-tips" style="margin:0;flex:1"><span>Tip: focus on a weak topic to target your gaps.</span></div><button class="btn sm" data-act="quizHistory">History</button></div></div>';
+}
+async function loadQuizHistory(){
+ const box=$("#quizBox");
+ box.innerHTML='<div class="panel"><div class="ph2"><span>Quiz history</span><span>Past attempts</span></div><div class="empty">Loading...</div></div>';
+ const r=await api("/quizzes");
+ const list=r.quizzes||[];
+ if(!list.length){box.innerHTML='<div class="panel"><div class="ph2"><span>Quiz history</span></div><div class="empty">No quizzes yet. Start one above.</div><button class="btn" data-act="quizNew">Back</button></div>';return;}
+ box.innerHTML='<div class="panel"><div class="ph2"><span>Quiz history</span><span>'+list.length+' quiz'+(list.length===1?"":"zes")+'</span></div>'+list.map(q=>'<div class="quiz-hist-row"><div class="quiz-hist-main"><b>Quiz #'+q.id+'</b><small>'+esc(q.subject||"Subject")+' · '+esc(fmtDate(q.created_at))+' · '+q.total+' questions · '+q.answered+' answered</small></div><div class="quiz-hist-score '+(q.score===null?"":q.score>=80?"good":q.score>=50?"mid":"low")+'">'+(q.score===null?"—":Math.round(q.score)+"%")+'</div><div class="sbtns"><button class="btn sm" data-act="quizReview" data-id="'+q.id+'">Review</button></div></div>').join("")+'<div style="margin-top:12px"><button class="btn" data-act="quizNew">Back to new quiz</button></div></div>';
 }
 function paintQuiz(){
  const z=S.quiz,box=$("#quizBox");
@@ -918,6 +946,17 @@ const ACTIONS={
    toast("Added "+added.length+" more questions.");
    paintQuiz();
   }catch(e){fail(e);}
+ },
+ quizHistory:()=>{S.quiz=null;loadQuizHistory().catch(fail);},
+ quizReview:async t=>{
+  const id=+t.dataset.id;
+  const q=await api("/quizzes/"+id);
+  const box=$("#quizBox");
+  const qs=q.questions||[];
+  const score=q.total?Math.round((q.correct||0)/q.total*100):0;
+  box.innerHTML='<div class="panel"><div class="ph2"><span>Review · Quiz #'+q.id+'</span><span>'+esc(q.correct||0)+'/'+q.total+' correct ('+score+'%)</span></div>'+
+    qs.map((qq,i)=>'<div class="quiz-review-q"><div class="quiz-review-num">Q'+(i+1)+'</div><div class="quiz-review-body"><div class="quiz-review-prompt">'+esc(qq.prompt)+'</div><div class="quiz-review-opts">'+(qq.options||[]).map((o,k)=>'<div class="quiz-review-opt '+(qq.correct_index===k?"correct":"")+(qq.chosen===k&&qq.correct_index!==k?"wrong":"")+'">'+esc(o)+(qq.correct_index===k?" ✓":"")+'</div>').join("")+(qq.explanation?'<div class="quiz-review-exp">'+esc(qq.explanation)+'</div>':'')+(qq.source?'<div class="quiz-review-src">Source: '+esc(qq.source.file)+', p. '+qq.source.page+'</div>':'')+'</div></div>').join("")+
+    '<div style="margin-top:12px"><button class="btn" data-act="quizNew">Back to new quiz</button><button class="btn sm" data-act="quizHistory" style="margin-left:8px">History</button></div></div>';
  },
  quizNew:()=>{S.quiz=null;paintQuizSetup();},
  pickFile:()=>{const i=$("#mFile");if(i)i.click();},
