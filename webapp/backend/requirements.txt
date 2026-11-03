@@ -1,0 +1,6 @@
+starlette
+uvicorn
+python-multipart
+pypdf
+requests
+pytest

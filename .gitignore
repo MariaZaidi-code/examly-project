@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data / databases
+*.db
+*.sqlite
+*.sqlite3
+examly_agent/data/*.db
+
+# Secrets
+.env
+.env.*
+*.key
+secrets.*
+
+# OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/settings.json
+.idea/
+
+# Node (not used yet, but safe)
+node_modules/

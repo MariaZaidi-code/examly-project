@@ -1,0 +1,18 @@
+flowchart LR
+  S([Student]) -->|question| A
+  subgraph AG[Python process: ExamAgent]
+    A[Agent loop<br/>max 5 tool steps] <-->|chat + tool schemas| L[LLM adapter<br/>OpenAI-compatible<br/>or offline stand-in]
+    P[System prompt<br/>role, scope, tool rules,<br/>evidence, memory, failure] --> A
+    STM[(Short-term memory<br/>session window)] <--> A
+    LTM[(Long-term memory<br/>SQLite ltm table<br/>+ vectors ltm:user)] <--> A
+    A -->|search_notes| RAG[RAG<br/>chunk, embed, rank]
+    RAG <--> VS[(Vector DB<br/>SQLite + NumPy cosine<br/>6 docs, 23 chunks)]
+    A -->|MCP client| MC[MCP client<br/>official SDK, stdio]
+  end
+  KB[/Lecture notes<br/>data/knowledge/*.md/] -->|ingest| RAG
+  MC <-->|JSON-RPC over stdio<br/>tools/list, tools/call| MS
+  subgraph SRV[Separate process: MCP server]
+    MS[study_tools_server.py] --> SD[(study.db<br/>quiz results, plans)]
+  end
+  A -->|answer + citations + trace| S
+  S -->|confirm| A

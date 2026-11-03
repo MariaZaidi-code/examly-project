@@ -1,0 +1,625 @@
+[
+ {
+  "user": "Explain third normal form",
+  "memory_used": [],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "search_notes",
+    "via": "local",
+    "args": {
+     "query": "Explain third normal form"
+    },
+    "result": {
+     "hits": [
+      {
+       "n": 1,
+       "source": "dbms_normalization.md",
+       "heading": "Third normal form",
+       "chunk": 3,
+       "score": 1.246,
+       "text": "Database Systems: Normalization / Third normal form :: Third normal form (3NF) removes transitive dependencies so that non key attributes depend only on the primary key. If A determines B and B determines C, then C depends on A only through B. Example: Student(id, dept, dept_head) violates 3NF because dept_head depends on dept. Split it into Student(id, dept) and Department(dept, dept_head)."
+      },
+      {
+       "n": 2,
+       "source": "dbms_normalization.md",
+       "heading": "First normal form",
+       "chunk": 1,
+       "score": 1.108,
+       "text": "Database Systems: Normalization / First normal form :: First normal form (1NF) requires atomic attribute values: no repeating groups and no nested relations."
+      },
+      {
+       "n": 3,
+       "source": "dbms_normalization.md",
+       "heading": "Second normal form",
+       "chunk": 2,
+       "score": 0.994,
+       "text": "Database Systems: Normalization / Second normal form :: Second normal form (2NF) removes partial dependencies. A relation is in 2NF if it is in 1NF and every non-key attribute depends on the whole candidate key, not on only part of a composite key."
+      }
+     ]
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "From your notes: Third normal form (3NF) removes transitive dependencies so that non key attributes depend only on the primary key. [1] First normal form (1NF) requires atomic attribute values: no repeating groups and no nested relations. [2]\n\nSources:\n[1] dbms_normalization.md / Third normal form (score 1.246)\n[2] dbms_normalization.md / First normal form (score 1.108)"
+ },
+ {
+  "user": "Give me an example of it",
+  "memory_used": [],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "search_notes",
+    "via": "local",
+    "args": {
+     "query": "Third normal form Give me an example of it"
+    },
+    "result": {
+     "hits": [
+      {
+       "n": 1,
+       "source": "dbms_normalization.md",
+       "heading": "Third normal form",
+       "chunk": 3,
+       "score": 1.037,
+       "text": "Database Systems: Normalization / Third normal form :: Third normal form (3NF) removes transitive dependencies so that non key attributes depend only on the primary key. If A determines B and B determines C, then C depends on A only through B. Example: Student(id, dept, dept_head) violates 3NF because dept_head depends on dept. Split it into Student(id, dept) and Department(dept, dept_head)."
+      },
+      {
+       "n": 2,
+       "source": "dbms_normalization.md",
+       "heading": "First normal form",
+       "chunk": 1,
+       "score": 1.015,
+       "text": "Database Systems: Normalization / First normal form :: First normal form (1NF) requires atomic attribute values: no repeating groups and no nested relations."
+      },
+      {
+       "n": 3,
+       "source": "dbms_normalization.md",
+       "heading": "Second normal form",
+       "chunk": 2,
+       "score": 0.828,
+       "text": "Database Systems: Normalization / Second normal form :: Second normal form (2NF) removes partial dependencies. A relation is in 2NF if it is in 1NF and every non-key attribute depends on the whole candidate key, not on only part of a composite key."
+      }
+     ]
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "From your notes: Third normal form (3NF) removes transitive dependencies so that non key attributes depend only on the primary key. [1] First normal form (1NF) requires atomic attribute values: no repeating groups and no nested relations. [2]\n\nSources:\n[1] dbms_normalization.md / Third normal form (score 1.037)\n[2] dbms_normalization.md / First normal form (score 1.015)"
+ },
+ {
+  "user": "Who won the football world cup?",
+  "memory_used": [],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "search_notes",
+    "via": "local",
+    "args": {
+     "query": "Who won the football world cup?"
+    },
+    "result": {
+     "hits": []
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "I could not find this in your notes, so I will not guess. Try uploading material that covers it or rephrase the question."
+ },
+ {
+  "user": "My name is Ayesha",
+  "memory_used": [],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "remember_fact",
+    "via": "local",
+    "args": {
+     "kind": "profile",
+     "content": "My name is Ayesha"
+    },
+    "result": {
+     "stored": true
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Noted, I will remember that in future sessions."
+ },
+ {
+  "user": "I struggle with deadlock handling",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "remember_fact",
+    "via": "local",
+    "args": {
+     "kind": "difficulty",
+     "content": "I struggle with deadlock handling"
+    },
+    "result": {
+     "stored": true
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Noted, I will remember that in future sessions."
+ },
+ {
+  "user": "I scored 3/8 on deadlock handling",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "difficulty",
+    "content": "I struggle with deadlock handling"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "record_quiz_result",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "topic": "deadlock handling",
+     "correct": 3,
+     "total": 8
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "recorded": true,
+      "topic": "deadlock handling",
+      "accuracy_pct": 38,
+      "answers": 8
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Recorded. Your accuracy on deadlock handling is now 38% over 8 answers."
+ },
+ {
+  "user": "I scored 5/9 on transactions",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "record_quiz_result",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "topic": "transactions",
+     "correct": 5,
+     "total": 9
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "recorded": true,
+      "topic": "transactions",
+      "accuracy_pct": 56,
+      "answers": 9
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Recorded. Your accuracy on transactions is now 56% over 9 answers."
+ },
+ {
+  "user": "My exam is on 15 Nov",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "remember_fact",
+    "via": "local",
+    "args": {
+     "kind": "exam",
+     "content": "exam date 2026-11-15 (My exam is on 15 Nov)"
+    },
+    "result": {
+     "stored": true
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Noted, I will remember that in future sessions."
+ },
+ {
+  "user": "quiz me",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-15 (My exam is on 15 Nov)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "get_weak_topics",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha"
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "user_id": "ayesha",
+      "weak_topics": [
+       {
+        "topic": "deadlock handling",
+        "accuracy_pct": 38,
+        "answers": 8
+       },
+       {
+        "topic": "transactions",
+        "accuracy_pct": 56,
+        "answers": 9
+       }
+      ],
+      "note": "empty list means no quiz results recorded yet"
+     }
+    }
+   },
+   {
+    "step": 1,
+    "tool": "search_notes",
+    "via": "local",
+    "args": {
+     "query": "deadlock handling"
+    },
+    "result": {
+     "hits": [
+      {
+       "n": 1,
+       "source": "os_deadlocks.md",
+       "heading": "Coffman conditions",
+       "chunk": 1,
+       "score": 0.412,
+       "text": "Operating Systems: Deadlock Handling / Coffman conditions :: Deadlock requires four conditions at once: mutual exclusion, hold and wait, no preemption, and circular wait. Breaking any one condition prevents deadlock."
+      },
+      {
+       "n": 2,
+       "source": "os_deadlocks.md",
+       "heading": "Definition",
+       "chunk": 0,
+       "score": 0.37,
+       "text": "Operating Systems: Deadlock Handling / Definition :: A deadlock occurs when a set of processes each hold a resource while waiting for a resource held by another process in the set, so none can proceed."
+      },
+      {
+       "n": 3,
+       "source": "os_deadlocks.md",
+       "heading": "Safe state",
+       "chunk": 3,
+       "score": 0.271,
+       "text": "Operating Systems: Deadlock Handling / Safe state :: A state is safe if there is an order in which every process can finish using the resources still available plus those released by earlier processes."
+      }
+     ]
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Practice question (targeting your weakest topic, deadlock handling, at 38%):\n\"Deadlock requires four _____ at once: mutual exclusion, hold and wait, no preemption, and circular wait.\"\nWhat word fills the blank? Answer and I will check it against your notes [1].\n\nSources:\n[1] os_deadlocks.md / Coffman conditions"
+ },
+ {
+  "user": "Make me a revision plan",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-15 (My exam is on 15 Nov)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "get_weak_topics",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha"
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "user_id": "ayesha",
+      "weak_topics": [
+       {
+        "topic": "deadlock handling",
+        "accuracy_pct": 38,
+        "answers": 8
+       },
+       {
+        "topic": "transactions",
+        "accuracy_pct": 56,
+        "answers": 9
+       }
+      ],
+      "note": "empty list means no quiz results recorded yet"
+     }
+    }
+   },
+   {
+    "step": 1,
+    "tool": "generate_revision_plan",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "exam_date": "2026-11-15",
+     "today": "2026-11-03"
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "plan_id": 1,
+      "status": "proposed",
+      "exam_date": "2026-11-15",
+      "items": [
+       {
+        "date": "2026-11-04",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-05",
+        "topic": "transactions",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-06",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-07",
+        "topic": "transactions",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-08",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-09",
+        "topic": "transactions",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-10",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-11",
+        "topic": "transactions",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-12",
+        "topic": "mixed practice and light review",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-13",
+        "topic": "mixed practice and light review",
+        "minutes": 45,
+        "status": "planned"
+       }
+      ],
+      "requires_confirmation": true,
+      "note": "Nothing is saved until the student confirms."
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Proposed plan 1 for your exam on 2026-11-15, weakest topics first:\n- 2026-11-04: deadlock handling (45 min)\n- 2026-11-05: transactions (45 min)\n- 2026-11-06: deadlock handling (45 min)\n- 2026-11-07: transactions (45 min)\n- 2026-11-08: deadlock handling (45 min)\n- 2026-11-09: transactions (45 min)\n- 2026-11-10: deadlock handling (45 min)\n- 2026-11-11: transactions (45 min)\n- 2026-11-12: mixed practice and light review (45 min)\n- 2026-11-13: mixed practice and light review (45 min)\n\nNothing is saved yet. Reply 'confirm' to save this plan, or tell me what to change."
+ },
+ {
+  "user": "yes confirm",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-15 (My exam is on 15 Nov)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "save_revision_plan",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "plan_id": 1,
+     "confirmed": true
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "plan_id": 1,
+      "status": "saved",
+      "sessions": 10
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Saved. Your plan (id 1) now has 10 sessions."
+ },
+ {
+  "user": "My exam has been moved to 11 Nov",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-15 (from confirmed plan)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "replan",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "new_exam_date": "2026-11-11",
+     "today": "2026-11-05"
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "plan_id": 2,
+      "status": "proposed",
+      "exam_date": "2026-11-11",
+      "kept_completed_sessions": 1,
+      "items": [
+       {
+        "date": "2026-11-04",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "done"
+       },
+       {
+        "date": "2026-11-06",
+        "topic": "deadlock handling",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-07",
+        "topic": "transactions",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-08",
+        "topic": "mixed practice and light review",
+        "minutes": 45,
+        "status": "planned"
+       },
+       {
+        "date": "2026-11-09",
+        "topic": "mixed practice and light review",
+        "minutes": 45,
+        "status": "planned"
+       }
+      ],
+      "requires_confirmation": true
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Proposed plan 2 for your exam on 2026-11-11, weakest topics first: Kept 1 completed sessions.\n- 2026-11-04: deadlock handling (45 min)\n- 2026-11-06: deadlock handling (45 min)\n- 2026-11-07: transactions (45 min)\n- 2026-11-08: mixed practice and light review (45 min)\n- 2026-11-09: mixed practice and light review (45 min)\n\nNothing is saved yet. Reply 'confirm' to save this plan, or tell me what to change."
+ },
+ {
+  "user": "confirm",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-15 (from confirmed plan)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "save_revision_plan",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "plan_id": 2,
+     "confirmed": true
+    },
+    "result": {
+     "ok": true,
+     "data": {
+      "plan_id": 2,
+      "status": "saved",
+      "sessions": 5
+     }
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "Saved. Your plan (id 2) now has 5 sessions."
+ },
+ {
+  "user": "My exam has been moved to 2026-11-01",
+  "memory_used": [
+   {
+    "kind": "profile",
+    "content": "My name is Ayesha"
+   },
+   {
+    "kind": "exam",
+    "content": "exam date 2026-11-11 (from confirmed plan)"
+   }
+  ],
+  "steps": [
+   {
+    "step": 0,
+    "tool": "replan",
+    "via": "MCP",
+    "args": {
+     "user_id": "ayesha",
+     "new_exam_date": "2026-11-01",
+     "today": "2026-11-05"
+    },
+    "result": {
+     "ok": false,
+     "error": "Error executing tool replan: new_exam_date must be after today"
+    }
+   }
+  ],
+  "llm": "offline-rule-policy (deterministic stand-in, not an LLM)",
+  "answer": "I could not build the plan: Error executing tool replan: new_exam_date must be after today"
+ }
+]

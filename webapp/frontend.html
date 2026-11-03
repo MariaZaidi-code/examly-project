@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Examly</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8F8F6;--surface:#fff;--line:#E6E6E1;--line2:#D4D4CD;--ink:#1F2428;--ink2:#4A525A;--ink3:#7B838B;--acc:#0F5C5C;--soft:#E8F1F0;--warn:#9A5B13;--warnbg:#FBF1E0;--bad:#A33A3A;--ok:#2F6B3F;--okbg:#F0F7F2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#F8F8F6;--surface:#fff;--line:#E6E6E1;--ink:#1F2428}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Geist,system-ui,sans-serif}
+.app{display:grid;grid-template-columns:216px 1fr;min-height:100vh}
+aside{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 16px;font-weight:600;font-size:15px}
+.mark{width:24px;height:24px;border-radius:5px;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:13px}
+nav button{all:unset;display:block;width:100%;box-sizing:border-box;padding:7px 10px;border-radius:6px;color:var(--ink2);cursor:pointer;font-size:13.5px;transition:background .16s,color .16s}
+nav button:hover{background:var(--bg);color:var(--ink)}nav button.on{background:var(--soft);color:var(--acc);font-weight:500}
+nav button:focus-visible{outline:2px solid var(--acc)}
+.sc{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:10px}.sc small{color:var(--ink3);font-size:12px;display:block}.sc b{font-weight:500;font-size:13.5px}
+.prof{margin-top:auto;display:flex;gap:10px;align-items:center;padding:12px 8px 0;border-top:1px solid var(--line)}
+.av{width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--acc);display:grid;place-items:center;font-size:12px;font-weight:600}
+main{padding:24px 32px 48px;max-width:1100px;width:100%}
+.ph{padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0;font-weight:600;letter-spacing:-.01em}.sub{color:var(--ink3);margin-top:2px}
+.pill{font-size:11.5px;padding:1px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2);background:#fff}.pill.ok{color:var(--ok);background:var(--okbg);border-color:#BFD6C5}.pill.bad{color:var(--bad);background:#F8E9E9;border-color:#E7C2C2}.pill.warn{color:var(--warn);background:var(--warnbg);border-color:#EBD3A8}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.ph2{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13.5px;font-weight:600}.ph2 span+span{font-weight:400;color:var(--ink3);font-size:12px}
+.g{display:grid;gap:12px}.g2{grid-template-columns:3fr 2fr}.g3{grid-template-columns:3fr 1.2fr}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.hero h2{margin:0 0 2px;font-size:20px}.hero p{margin:0;color:var(--ink2)}
+.cnt{text-align:right}.cnt b{font-size:30px;font-weight:500;letter-spacing:-.03em;line-height:1;display:block}.cnt small{color:var(--ink3)}
+.btn{font:inherit;font-weight:500;padding:6px 14px;border-radius:6px;border:1px solid var(--line2);background:#fff;color:var(--ink);cursor:pointer;transition:background .16s,border-color .16s}.btn:hover{background:var(--bg);border-color:var(--ink3)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn.p:hover{background:#0B4747}
+.row{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0}.row .m{flex:1;min-width:0}.row .t{font-weight:500}.row .s{font-size:12px;color:var(--ink3)}
+.bar{height:5px;width:90px;background:var(--line);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);transform-origin:left;animation:gr .6s cubic-bezier(.2,.6,.2,1) both}.bar.w i{background:#B9822F}.bar.b i{background:var(--bad)}
+@keyframes gr{from{transform:scaleX(0)}}
+.chart{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:8px}.chart div{flex:1;text-align:center;font-size:11px;color:var(--ink3)}.chart i{display:block;background:var(--acc);border-radius:3px 3px 0 0;margin-bottom:4px;transform-origin:bottom;animation:gv .5s both}
+@keyframes gv{from{transform:scaleY(0)}}
+.msg{display:flex;gap:12px;padding:12px 0}.msg .a{width:26px;height:26px;border-radius:6px;background:var(--soft);color:var(--acc);display:grid;place-items:center;font-size:12px;font-weight:600;flex:none}.msg.u .a{background:var(--line);color:var(--ink2)}
+.msg p{margin:0 0 8px;font-size:14.5px;line-height:1.65}.msg blockquote{margin:6px 0;padding-left:12px;border-left:2px solid var(--line2);color:var(--ink2)}
+details{border:1px solid var(--line);border-radius:6px;margin:6px 0;font-size:13px;color:var(--ink2)}summary{padding:8px 12px;cursor:pointer}details>div{padding:0 12px 10px;animation:fi .24s}@keyframes fi{from{opacity:0}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.inp{border:1px solid var(--line2);border-radius:6px;padding:10px 12px;color:var(--ink3);background:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}.cal .h{padding:6px 10px;font-size:12px;color:var(--ink3);background:var(--bg);border-bottom:1px solid var(--line)}
+.cal .c{min-height:76px;padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12px;color:var(--ink3)}.cal .c:nth-child(7n){border-right:0}
+.chip{display:block;font-size:11.5px;padding:2px 6px;margin-top:3px;border-radius:4px;background:var(--soft);color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chip.x{background:var(--warnbg);color:var(--warn);font-weight:500}.chip.d{background:var(--bg);color:var(--ink3);text-decoration:line-through}
+.hm{display:grid;grid-template-columns:130px repeat(4,1fr);gap:2px;font-size:12px}.hm div{padding:10px 8px;border-radius:3px}.hm .l{color:var(--ink2);padding-left:0}.hm .hd{color:var(--ink3);padding:0 8px 4px}
+.note{font-size:12px;color:var(--ink3);margin-top:16px}
+.view{display:none}.view.on{display:block;animation:fi .24s}
+@media(max-width:820px){.app{grid-template-columns:1fr}aside{flex-direction:row;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}.brand,.sc,.prof{display:none}nav{display:flex;gap:2px}nav button{white-space:nowrap;width:auto}main{padding:16px}.g2,.g3{grid-template-columns:1fr}.cal .c{min-height:52px;padding:4px}.chip{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.in{font:inherit;width:100%;border:1px solid var(--line2);border-radius:6px;padding:8px 10px;background:#fff;color:var(--ink)}
+.in:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+textarea.in{resize:vertical}
+.lbl{display:block;font-size:12px;color:var(--ink3);margin:10px 0 4px}
+.frm{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));align-items:end}
+.frm .lbl{margin:0 0 4px}
+.lnk{all:unset;cursor:pointer;color:var(--acc);font-size:12px;font-weight:400}
+.lnk:hover{text-decoration:underline}.lnk:focus-visible{outline:2px solid var(--acc)}
+.empty{color:var(--ink3);padding:8px 0}
+.banner{background:var(--warnbg);color:var(--warn);border:1px solid #EBD3A8;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px}
+.banner code,.msg code{background:var(--bg);padding:1px 5px;border-radius:4px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:6px;font-size:13px;z-index:50;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}.toast.err{background:var(--bad)}
+dialog{border:1px solid var(--line);border-radius:8px;padding:20px;width:min(420px,92vw);color:var(--ink);background:#fff}
+dialog::backdrop{background:rgba(31,36,40,.35)}
+dialog h3{margin:0 0 4px;font-size:16px}
+dialog .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+dialog .em{color:var(--bad);font-size:12.5px;min-height:18px;margin-top:8px}
+.opt{display:block;width:100%;text-align:left;font:inherit;cursor:pointer;color:var(--ink);transition:border-color .16s,background .16s}
+.opt:hover:not(:disabled){border-color:var(--ink3)}
+.opt:disabled{cursor:default}
+.opt.ok{border-color:#BFD6C5;background:var(--okbg)}
+.opt.no{border-color:#E7C2C2;background:#F8E9E9}
+.btn.sm{padding:2px 10px;font-size:12px}
+.btn:disabled{opacity:.55;cursor:default}
+.btn:focus-visible,.opt:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.chatbox{display:flex;gap:8px;align-items:flex-end}
+.chatbox textarea{flex:1}
+.msg>div:last-child{min-width:0}
+.msg .meta{font-size:12px;color:var(--ink3)}
+.msg.nf p{color:var(--ink2)}
+.pill.pulse{animation:pl 1.2s ease-in-out infinite}
+@keyframes pl{50%{opacity:.5}}
+.prof{cursor:pointer}.prof:hover .av{background:var(--line)}
+.prof:focus-visible{outline:2px solid var(--acc)}
+.mnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mnav b{font-size:13.5px;min-width:120px;text-align:center}
+.cal .c b{font-weight:500;color:var(--ink2)}
+.sbtns{display:flex;gap:6px;flex:none}
+.hm .na{background:var(--bg);color:var(--ink3);text-align:center}
+.pre{white-space:pre-wrap}
+.dchart{gap:3px}.dchart div{font-size:0}
+@media(max-width:820px){.sbtns{flex-wrap:wrap}.chatbox{flex-direction:column;align-items:stretch}}
+</style></head><body>
+<div class="app">
+<aside>
+ <div class="brand"><div class="mark">E</div>Examly</div>
+ <nav id="nav"></nav>
+ <div class="sc"><small>Next exam</small><b id="sbExam">...</b></div>
+ <div class="sc"><small>Study streak</small><b id="sbStreak">...</b></div>
+ <div class="prof" id="profBtn" data-act="editProfile" role="button" tabindex="0" title="Edit profile"><div class="av" id="sbAv">?</div><div><div id="sbName" style="font-size:13px;font-weight:500">Your name</div><div id="sbProg" style="font-size:12px;color:var(--ink3)">Tap to set up</div></div></div>
+</aside>
+<main>
+ <div class="banner" id="banner" hidden></div>
+ <section class="view on" id="v0"></section>
+ <section class="view" id="v1">
+  <div class="ph"><div><h1>AI Study Assistant</h1><div class="sub">Answers grounded in your own lecture materials.</div></div><span class="pill" id="aStatus">...</span></div>
+  <div class="g g3">
+   <div>
+    <div id="chatLog"></div>
+    <div class="chips"><button class="btn" data-act="chip" data-text="Explain this concept simply: ">Explain this concept simply</button><button class="btn" data-act="chip" data-text="Summarise my notes on ">Summarise my notes</button><button class="btn" data-act="chip" data-text="Give me practice questions on ">Give me practice questions</button></div>
+    <div class="chatbox"><textarea class="in" id="chatIn" rows="2" placeholder="Ask a question about your materials" aria-label="Ask a question about your materials"></textarea><button class="btn p" id="chatSend" data-act="chatSend">Send</button></div>
+   </div>
+   <div class="g" style="align-content:start">
+    <div class="panel"><div class="ph2"><span>Subject</span></div><select class="in" id="aSubject" aria-label="Subject"></select><label class="lbl" for="aLevel">Level</label><select class="in" id="aLevel"><option>Basic</option><option selected>Standard</option><option>Advanced</option></select></div>
+    <div class="panel"><div class="ph2"><span>Documents in scope</span><button class="lnk" data-act="clearChat">Clear chat</button></div><div id="aDocs"></div></div>
+   </div>
+  </div>
+ </section>
+ <section class="view" id="v2">
+  <div class="ph"><div><h1>Study Planner</h1><div class="sub">Plan sessions, review proposals, and track completion.</div></div></div>
+  <div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Propose a schedule</span><span>Based on your exams and weak topics</span></div>
+   <div class="frm">
+    <div><label class="lbl" for="pDays">Days</label><input class="in" id="pDays" type="number" min="1" max="31" value="7"></div>
+    <div><label class="lbl" for="pStart">Start date (optional)</label><input class="in" id="pStart" type="date"></div>
+    <div><label class="lbl" for="pTime">Start time</label><input class="in" id="pTime" type="time" value="18:00"></div>
+    <div><label class="lbl" for="pDur">Minutes</label><input class="in" id="pDur" type="number" min="10" max="240" value="45"></div>
+    <div><label class="lbl" for="pPer">Per day</label><input class="in" id="pPer" type="number" min="1" max="4" value="1"></div>
+    <div><button class="btn p" data-act="propose" style="width:100%">Propose</button></div>
+   </div></div>
+  <div id="proposal"></div>
+  <div class="mnav"><button class="btn sm" data-act="calPrev" aria-label="Previous month">&lsaquo;</button><b id="calTitle"></b><button class="btn sm" data-act="calNext" aria-label="Next month">&rsaquo;</button></div>
+  <div class="cal" style="margin-top:8px" id="cal"></div>
+  <div class="panel" style="margin-top:12px"><div class="ph2"><span>Sessions this month</span><span id="sessCount"></span></div><div id="sessList"></div></div>
+ </section>
+ <section class="view" id="v3">
+  <div class="ph"><div><h1>Practice &amp; Quizzes</h1><div class="sub">Questions generated from your own study materials.</div></div></div>
+  <div id="quizBox"></div>
+ </section>
+ <section class="view" id="v4">
+  <div class="ph"><div><h1>My Weak Topics</h1><div class="sub">Where your quiz answers show the biggest gaps.</div></div></div>
+  <div id="weakBox"></div>
+ </section>
+ <section class="view" id="v5">
+  <div class="ph"><div><h1>Study Materials</h1><div class="sub">Upload notes once. The assistant and quizzes use them as their only source.</div></div></div>
+  <div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Upload a file</span><span>pdf, txt or md</span></div>
+   <div class="frm" style="grid-template-columns:2fr 2fr 1fr">
+    <div><label class="lbl" for="mFile">File</label><input class="in" id="mFile" type="file" accept=".pdf,.txt,.md"></div>
+    <div><label class="lbl" for="mSub">Subject (pick or type a new one)</label><input class="in" id="mSub" list="subjList" placeholder="e.g. Database Systems"></div>
+    <div><button class="btn p" id="mUp" data-act="upload" style="width:100%">Upload</button></div>
+   </div></div>
+  <div class="panel" id="matBox"></div>
+ </section>
+ <section class="view" id="v6">
+  <div class="ph"><div><h1>Performance Analytics</h1><div class="sub">Trends from your recorded sessions and quizzes.</div></div></div>
+  <div id="anBox"></div>
+ </section>
+ <p class="note" id="foot"></p>
+</main></div>
+<datalist id="subjList"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* Examly frontend. Talks to the REST API under /api (see backend/README.md). */
+const API = new URLSearchParams(location.search).get("api") || (location.protocol === "file:" ? "http://127.0.0.1:8000/api" : "/api");
+const NAMES = ["Overview", "AI Study Assistant", "Study Planner", "Practice & Quizzes", "My Weak Topics", "Study Materials", "Performance Analytics"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const S = { view: 0, subjects: [], initial: "?", msgs: [], uncheck: new Set(), docs: [], month: null, proposal: null, quiz: null, prefill: null, pollT: null };
+
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ymd = s => { const p = String(s).slice(0, 10).split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); };
+const fmtDate = s => { const d = ymd(s); return DOW[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()]; };
+const fmtTime = s => String(s).slice(11, 16);
+const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+const bandCls = b => (b === "bad" ? "b" : b === "warn" ? "w" : "");
+
+/* ---------- network ---------- */
+function banner(on) {
+  const b = $("#banner");
+  b.hidden = !on;
+  if (on) b.innerHTML = "Cannot reach the Examly server at <code>" + esc(API) + "</code>. Start it with <code>uvicorn app.main:app</code> in <code>webapp/backend</code>, then reload this page.";
+}
+async function api(path, opts) {
+  let res;
+  try { res = await fetch(API + path, opts); } catch (e) { banner(true); throw new Error("Cannot reach the server"); }
+  banner(false);
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) throw new Error((data && data.error) || "Request failed (" + res.status + ")");
+  return data;
+}
+const send = (path, method, body) => api(path, { method: method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+
+let toastT;
+function toast(msg, isErr) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "toast on" + (isErr ? " err" : "");
+  clearTimeout(toastT); toastT = setTimeout(() => { t.className = "toast"; }, 3200);
+}
+const fail = e => toast(e.message || String(e), true);
+
+/* ---------- shared pieces ---------- */
+async function refreshSubjects() {
+  S.subjects = await api("/subjects");
+  $("#subjList").innerHTML = S.subjects.map(s => '<option value="' + esc(s.name) + '">').join("");
+}
+const subjOptions = (sel, all) => (all ? '<option value="">All subjects</option>' : "") + S.subjects.map(s => '<option value="' + s.id + '"' + (String(sel) === String(s.id) ? " selected" : "") + ">" + esc(s.name) + "</option>").join("");
+
+function paintSidebar(d) {
+  const p = d.profile || {};
+  $("#sbExam").textContent = d.next_exam ? d.next_exam.subject + (d.next_exam.days_left === 0 ? " today" : " in " + plural(d.next_exam.days_left, "day")) : "No exam added";
+  $("#sbStreak").textContent = plural(d.streak_days, "day");
+  S.initial = (p.name || "?").slice(0, 1).toUpperCase();
+  $("#sbAv").textContent = S.initial;
+  $("#sbName").textContent = p.name || "Your name";
+  $("#sbProg").textContent = p.program || "Tap to set up";
+}
+async function refreshDash() { const d = await api("/dashboard"); paintSidebar(d); return d; }
+
+function row(title, sub, right) {
+  return '<div class="row"><div class="m"><div class="t">' + title + '</div><div class="s">' + sub + "</div></div>" + (right || "") + "</div>";
+}
+const bar = (pct, band) => '<div class="bar ' + bandCls(band) + '"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>';
+
+function openForm(title, fields, submitLabel, onSubmit) {
+  const dlg = document.createElement("dialog");
+  dlg.innerHTML = "<form><h3>" + esc(title) + "</h3>" + fields.map(f =>
+    '<label class="lbl" for="f_' + f.name + '">' + esc(f.label) + "</label>" +
+    '<input class="in" id="f_' + f.name + '" name="' + f.name + '" type="' + (f.type || "text") + '" value="' + esc(f.value || "") + '"' +
+    (f.list ? ' list="' + f.list + '"' : "") + (f.required ? " required" : "") + ' autocomplete="off">').join("") +
+    '<div class="em" role="alert"></div><div class="acts"><button type="button" class="btn" value="x">Cancel</button><button class="btn p" type="submit">' + esc(submitLabel) + "</button></div></form>";
+  document.body.appendChild(dlg);
+  const form = $("form", dlg);
+  $("button[value=x]", dlg).onclick = () => dlg.close();
+  dlg.addEventListener("close", () => dlg.remove());
+  form.onsubmit = async ev => {
+    ev.preventDefault();
+    const vals = {};
+    fields.forEach(f => { vals[f.name] = form.elements[f.name].value.trim(); });
+    try { await onSubmit(vals); dlg.close(); } catch (e) { $(".em", dlg).textContent = e.message; }
+  };
+  dlg.showModal();
+  const first = form.elements[fields[0].name]; if (first) first.focus();
+}
+
+/* ---------- navigation ---------- */
+const VIEWS = [loadOverview, loadAssistant, loadPlanner, loadQuiz, loadWeak, loadMaterials, loadAnalytics];
+function go(i) {
+  S.view = i; clearTimeout(S.pollT);
+  document.querySelectorAll(".view").forEach((v, k) => v.classList.toggle("on", k === i));
+  [].forEach.call($("#nav").children, (b, k) => b.classList.toggle("on", k === i));
+  window.scrollTo(0, 0);
+  VIEWS[i]().catch(fail);
+}
+NAMES.forEach((n, i) => { const b = document.createElement("button"); b.textContent = n; b.onclick = () => go(i); $("#nav").appendChild(b); });
+
+/* ---------- 0 overview ---------- */
+async function loadOverview() {
+  const d = await refreshDash(), p = d.profile || {}, ne = d.next_exam;
+  const first = (p.name || "").split(" ")[0];
+  const max = Math.max(1, ...d.last7.map(x => x.minutes));
+  const hero = ne
+    ? '<div><h2>Continue studying</h2><p>Next exam: ' + esc(ne.title) + " on " + esc(fmtDate(ne.date)) + ".</p>"
+    : "<div><h2>Welcome to Examly</h2><p>Add your first exam to get a countdown and a study plan.</p>";
+  const cnt = ne ? '<div class="cnt"><b>' + ne.days_left + "</b><small>" + (ne.days_left === 0 ? "exam today: " : "days to ") + esc(ne.subject) + "</small></div>" : "";
+  const sess = d.today_sessions.length ? d.today_sessions.map(s => row(esc(s.topic), esc(s.subject) + " " + fmtTime(s.scheduled_at) + ", " + s.duration_min + " min",
+    (s.status === "planned" ? '<button class="btn sm" data-act="sessionStatus" data-id="' + s.id + '" data-status="done">Mark done</button>' : "") +
+    '<span class="pill ' + (s.status === "done" ? "ok" : "") + '">' + (s.status === "done" ? "Done" : s.status === "skipped" ? "Skipped" : "Planned") + "</span>")).join("") : '<div class="empty">No sessions today. Use the Study Planner to schedule some.</div>';
+  const weak = d.weakest.length ? d.weakest.map(w => row(esc(w.topic), esc(w.subject), bar(w.proficiency, w.band))).join("") : '<div class="empty">Take a quiz and your weakest topics will show up here.</div>';
+  const rec = d.recommended && d.weakest.length
+    ? '<div class="t" style="font-weight:500">Practice ' + esc(d.recommended.topic) + '</div><div class="s" style="font-size:12.5px;color:var(--ink3)">Currently ' + d.recommended.proficiency + "% across " + plural(d.recommended.answers, "answer") + '.</div><button class="btn p sm" style="margin-top:8px" data-act="practice" data-sub="' + d.weakest[0].subject_id + '" data-topic="' + esc(d.recommended.topic) + '">Practice now</button>'
+    : '<div class="empty">Nothing yet. Start a quiz to get a recommendation.</div>';
+  $("#v0").innerHTML =
+    '<div class="ph"><div><h1>' + esc(d.greeting) + (first ? ", " + esc(first) : "") + '</h1><div class="sub">' + esc([p.program, p.term].filter(Boolean).join(", ") || "Tap your name in the sidebar to set up your profile.") + "</div></div></div>" +
+    '<div class="panel hero">' + hero + '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-go="1">Ask the assistant</button><button class="btn" data-go="3">Start a quiz</button><button class="btn" data-act="addExam">Add exam</button></div></div>' + cnt + "</div>" +
+    '<div class="g g2" style="margin-top:12px"><div class="g">' +
+    '<div class="panel"><div class="ph2"><span>Today\'s schedule</span><span>' + plural(d.today_sessions.length, "session") + "</span></div>" + sess + "</div>" +
+    '<div class="panel"><div class="ph2"><span>Study minutes, last 7 days</span><span>' + d.last7_total + ' min total</span></div><div class="chart">' +
+    d.last7.map(x => '<div title="' + x.minutes + ' min"><i style="height:' + (x.minutes ? Math.max(3, Math.round(x.minutes / max * 90)) : 0) + 'px"></i>' + esc(x.weekday) + "</div>").join("") + "</div>" +
+    '<div class="frm" style="margin-top:12px;grid-template-columns:1fr auto"><div><label class="lbl" for="logMin">Log study time (minutes)</label><input class="in" id="logMin" type="number" min="1" max="1440" placeholder="30"></div><button class="btn" data-act="logStudy">Log</button></div></div>' +
+    '</div><div class="g"><div class="panel"><div class="ph2"><span>Weakest topics</span><span>from quiz history</span></div>' + weak + "</div>" +
+    '<div class="panel"><div class="ph2"><span>Recommended next</span></div>' + rec + "</div></div></div>";
+  $("#foot").textContent = "";
+}
+
+/* ---------- 1 assistant ---------- */
+function renderMsg(m) {
+  if (m.role === "user") return '<div class="msg u"><div class="a">' + esc(S.initial) + "</div><div><p>" + esc(m.content).replace(/\n/g, "<br>") + "</p></div></div>";
+  const paras = esc(m.content).split(/\n{2,}/).map(p => "<p>" + p.replace(/\n/g, "<br>").replace(/\[(\d+)\]/g, "<b>[$1]</b>") + "</p>").join("");
+  const cites = (m.citations || []).map(c => "<details><summary>[" + c.n + "] " + esc(c.filename) + ", page " + c.page + "</summary><div>\"" + esc(c.quote) + "\"</div></details>").join("");
+  const meta = m.mode === "extractive" ? '<div class="meta">Extractive answer: the best matching sentences from your notes (no language model configured).</div>' : "";
+  return '<div class="msg' + (m.grounded === false ? " nf" : "") + '"><div class="a">E</div><div>' + paras + cites + meta + "</div></div>";
+}
+function paintChat() {
+  const log = $("#chatLog");
+  log.innerHTML = S.msgs.length ? S.msgs.map(renderMsg).join("") : '<div class="empty">Ask a question. Answers come only from the notes you uploaded, with citations.</div>';
+  window.scrollTo(0, document.body.scrollHeight);
+}
+function paintDocs() {
+  const sid = $("#aSubject").value;
+  const docs = S.docs.filter(d => d.status === "indexed" && (!sid || String(d.subject_id) === sid));
+  $("#aDocs").innerHTML = docs.length ? docs.map(d => '<label class="row" style="cursor:pointer"><input type="checkbox" data-doc="' + d.id + '"' + (S.uncheck.has(d.id) ? "" : " checked") + '><div class="m"><div class="t">' + esc(d.filename) + '</div><div class="s">' + plural(d.pages, "page") + "</div></div></label>").join("") : '<div class="empty">No indexed documents yet. Upload some under Study Materials.</div>';
+}
+async function loadAssistant() {
+  const [st, , docs, hist] = await Promise.all([api("/assistant/status"), refreshSubjects(), api("/materials"), api("/assistant/history"), refreshDash()]);
+  const pill = $("#aStatus");
+  pill.textContent = st.label; pill.className = "pill " + (st.llm_connected ? "ok" : "warn");
+  const cur = $("#aSubject").value;
+  $("#aSubject").innerHTML = subjOptions(cur, true);
+  S.docs = docs; S.msgs = hist.map(m => ({ role: m.role, content: m.content, citations: m.citations, grounded: m.role === "assistant" && !(m.citations || []).length ? false : true }));
+  paintDocs(); paintChat();
+}
+async function chatSend() {
+  const inp = $("#chatIn"), msg = inp.value.trim();
+  if (!msg) return;
+  const sid = $("#aSubject").value;
+  const docs = S.docs.filter(d => d.status === "indexed" && (!sid || String(d.subject_id) === sid));
+  const chosen = docs.filter(d => !S.uncheck.has(d.id)).map(d => d.id);
+  if (docs.length && !chosen.length) { toast("Select at least one document in scope.", true); return; }
+  const body = { message: msg, level: $("#aLevel").value };
+  if (sid) body.subject_id = +sid;
+  if (docs.length && chosen.length < docs.length) body.document_ids = chosen;
+  const btn = $("#chatSend"); btn.disabled = true; inp.value = "";
+  S.msgs.push({ role: "user", content: msg }); S.msgs.push({ role: "assistant", content: "Searching your notes...", citations: [] }); paintChat();
+  try {
+    const r = await send("/assistant/chat", "POST", body);
+    S.msgs[S.msgs.length - 1] = { role: "assistant", content: r.answer, citations: r.citations, grounded: r.grounded, mode: r.mode };
+  } catch (e) { S.msgs.pop(); S.msgs.pop(); inp.value = msg; fail(e); }
+  btn.disabled = false; paintChat();
+}
+
+/* ---------- 2 planner ---------- */
+async function loadPlanner(month) {
+  const q = month || S.month;
+  const c = await api("/planner/calendar" + (q ? "?month=" + q : ""));
+  S.month = c.month;
+  const [y, m] = c.month.split("-").map(Number);
+  $("#calTitle").textContent = MONTHS[m - 1] + " " + y;
+  let h = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => '<div class="h">' + d + "</div>").join("");
+  for (let i = 0; i < c.first_weekday; i++) h += '<div class="c"></div>';
+  const list = [];
+  for (let d = 1; d <= c.days_in_month; d++) {
+    const key = c.month + "-" + String(d).padStart(2, "0"), day = c.days[key] || { sessions: [], exams: [] };
+    h += '<div class="c"><b>' + d + "</b>" +
+      day.exams.map(e => '<span class="chip x" title="' + esc(e.title + ", " + e.subject) + '">Exam: ' + esc(e.subject) + "</span>").join("") +
+      day.sessions.map(s => { list.push(s); return '<span class="chip' + (s.status === "planned" ? "" : " d") + '" title="' + esc(s.subject + ": " + s.topic) + '">' + fmtTime(s.scheduled_at) + " " + esc(s.topic) + "</span>"; }).join("") + "</div>";
+  }
+  $("#cal").innerHTML = h;
+  $("#sessCount").textContent = plural(list.length, "session");
+  $("#sessList").innerHTML = list.length ? list.map(s => row(esc(s.topic), esc(fmtDate(s.scheduled_at)) + ", " + fmtTime(s.scheduled_at) + ", " + esc(s.subject) + ", " + s.duration_min + " min",
+    '<div class="sbtns">' + (s.status === "planned"
+      ? '<button class="btn sm" data-act="sessionStatus" data-id="' + s.id + '" data-status="done">Done</button><button class="btn sm" data-act="sessionStatus" data-id="' + s.id + '" data-status="skipped">Skip</button>'
+      : '<span class="pill ' + (s.status === "done" ? "ok" : "") + '">' + (s.status === "done" ? "Done" : "Skipped") + '</span><button class="btn sm" data-act="sessionStatus" data-id="' + s.id + '" data-status="planned">Undo</button>') +
+    '<button class="btn sm" data-act="sessionDelete" data-id="' + s.id + '" aria-label="Delete session">&times;</button></div>')).join("") : '<div class="empty">No sessions this month.</div>';
+  paintProposal();
+}
+function paintProposal() {
+  const p = S.proposal, box = $("#proposal");
+  if (!p) { box.innerHTML = ""; return; }
+  box.innerHTML = '<div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Proposed schedule</span><span>Nothing is saved until you confirm</span></div>' +
+    p.items.map(i => row(esc(fmtDate(i.scheduled_at)) + ", " + fmtTime(i.scheduled_at), esc(i.subject) + ", " + esc(i.topic), '<span class="s">' + i.duration_min + " min</span>")).join("") +
+    '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn p" data-act="proposalConfirm">Confirm and save</button><button class="btn" data-act="proposalDiscard">Discard</button></div></div>';
+}
+async function propose() {
+  const body = { days: +$("#pDays").value, start_time: $("#pTime").value || "18:00", duration_min: +$("#pDur").value, per_day: +$("#pPer").value };
+  if ($("#pStart").value) body.start_date = $("#pStart").value;
+  if (S.proposal) { try { await send("/planner/proposals/" + S.proposal.id, "DELETE"); } catch (e) { /* already gone */ } }
+  S.proposal = await send("/planner/propose", "POST", body); paintProposal();
+}
+function shiftMonth(n) { const [y, m] = S.month.split("-").map(Number), d = new Date(y, m - 1 + n, 1); return loadPlanner(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")); }
+
+/* ---------- 3 quiz ---------- */
+async function loadQuiz() {
+  await refreshSubjects();
+  if (S.prefill) { const p = S.prefill; S.prefill = null; await startQuiz(p.sub, 5, p.topic); return; }
+  if (S.quiz) { paintQuiz(); return; }
+  paintQuizSetup();
+}
+function paintQuizSetup() {
+  const box = $("#quizBox");
+  if (!S.subjects.length) { box.innerHTML = '<div class="panel"><div class="empty">Upload notes under Study Materials first. Quizzes are built from your own files.</div><button class="btn p" data-go="5">Go to Study Materials</button></div>'; return; }
+  box.innerHTML = '<div class="panel"><div class="ph2"><span>New quiz</span><span>Fill-in-the-blank questions from your notes</span></div><div class="frm">' +
+    '<div><label class="lbl" for="qSub">Subject</label><select class="in" id="qSub">' + subjOptions(S.subjects[0].id) + "</select></div>" +
+    '<div><label class="lbl" for="qCount">Questions</label><select class="in" id="qCount"><option>5</option><option>10</option><option>15</option></select></div>' +
+    '<div><label class="lbl" for="qTopic">Topic label (optional)</label><input class="in" id="qTopic" placeholder="e.g. Transactions"></div>' +
+    '<div><button class="btn p" data-act="quizStart" style="width:100%">Start quiz</button></div></div></div>';
+}
+async function startQuiz(subjectId, count, topic) {
+  const body = { subject_id: subjectId, count: count };
+  if (topic) body.topic = topic;
+  const q = await send("/quizzes", "POST", body);
+  S.quiz = { id: q.id, qs: q.questions, i: 0, fb: null, score: 0, busy: false };
+  paintQuiz();
+}
+function paintQuiz() {
+  const z = S.quiz, box = $("#quizBox");
+  if (z.i >= z.qs.length) {
+    box.innerHTML = '<div class="panel"><div class="ph2"><span>Quiz finished</span></div><p style="font-size:15px;margin:4px 0 12px">You got <b>' + z.score + "</b> of <b>" + z.qs.length + '</b> correct.</p><div style="display:flex;gap:8px"><button class="btn p" data-act="quizNew">New quiz</button><button class="btn" data-go="4">See weak topics</button></div></div>';
+    return;
+  }
+  const q = z.qs[z.i], fb = z.fb;
+  const optBtns = q.options.map((o, k) => '<button class="panel opt' + (fb ? (k === fb.correct_index ? " ok" : k === fb.chosen ? " no" : "") : "") + '" data-act="quizOpt" data-i="' + k + '"' + (fb || z.busy ? " disabled" : "") + ">" + esc(o) + "</button>").join("");
+  box.innerHTML = '<div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:6px"><div style="height:100%;background:var(--acc);width:' + Math.round(z.i / z.qs.length * 100) + '%"></div></div>' +
+    '<div class="s" style="font-size:12px;color:var(--ink3);margin-bottom:10px">Question ' + (z.i + 1) + " of " + z.qs.length + "</div>" +
+    '<div class="panel pre" style="font-size:15px;line-height:1.6">' + esc(q.prompt) + "</div>" +
+    '<div class="g" style="margin:12px 0">' + optBtns + "</div>" +
+    (fb ? '<div class="panel" style="' + (fb.correct ? "background:var(--okbg);border-color:#BFD6C5" : "background:#F8E9E9;border-color:#E7C2C2") + '"><b>' + (fb.correct ? "Correct." : "Not quite.") + '</b> <span style="color:var(--ink2)">' + esc(fb.explanation || "") + '</span><div class="s" style="font-size:12px;color:var(--ink3)">Source: ' + esc(fb.source.file) + ", p. " + fb.source.page + "</div></div>" +
+      '<button class="btn p" style="margin-top:12px" data-act="quizNext">' + (z.i + 1 < z.qs.length ? "Next question" : "See results") + "</button>" : "");
+}
+async function quizOpt(t) {
+  const z = S.quiz; if (!z || z.fb || z.busy) return;
+  const q = z.qs[z.i], k = +t.dataset.i; z.busy = true; paintQuiz();
+  try {
+    const r = await send("/quizzes/" + z.id + "/questions/" + q.id + "/answer", "POST", { chosen: k });
+    z.fb = Object.assign({ chosen: k }, r); if (r.correct) z.score++;
+  } finally { z.busy = false; paintQuiz(); }
+}
+
+/* ---------- 4 weak topics ---------- */
+const heat = p => p == null ? null : p >= 85 ? ["#0F5C5C", "#fff"] : p >= 75 ? ["#3F7F7C", "#fff"] : p >= 70 ? ["#8DB3AF", "var(--ink)"] : p >= 50 ? ["#F6F1E4", "var(--ink)"] : ["#F3E3E3", "var(--ink)"];
+async function loadWeak() {
+  const [w] = await Promise.all([api("/weak-topics"), refreshDash()]);
+  const box = $("#weakBox");
+  if (!w.ranked.length) { box.innerHTML = '<div class="panel"><div class="empty">No quiz answers yet. Answer a few questions and your topic proficiency will appear here.</div><button class="btn p" data-go="3">Start a quiz</button></div>'; return; }
+  const cols = w.heatmap.columns;
+  let hm = '<div class="hm" style="grid-template-columns:130px repeat(' + cols.length + ',1fr)"><div class="hd"></div>' + cols.map(c => '<div class="hd">' + esc(c) + "</div>").join("");
+  w.heatmap.rows.forEach(r => {
+    hm += '<div class="l">' + esc(r.subject) + "</div>";
+    cols.forEach(c => { const v = r.cells[c], h = heat(v); hm += h ? '<div style="background:' + h[0] + ";color:" + h[1] + '">' + v + "%</div>" : '<div class="na">-</div>'; });
+  });
+  box.innerHTML = '<div class="panel"><div class="ph2"><span>Topic proficiency</span><span>Subject by topic</span></div><div style="overflow-x:auto">' + hm + "</div></div>" +
+    '<div class="panel" style="margin-top:12px"><div class="ph2"><span>Ranked by proficiency</span></div>' +
+    w.ranked.map(r => row(esc(r.topic), esc(r.subject) + ", last " + r.last_correct + "/" + r.last_total + ", " + plural(r.answers, "answer"), bar(r.proficiency, r.band) + '<button class="btn p" data-act="practice" data-sub="' + r.subject_id + '" data-topic="' + esc(r.topic) + '">Practice now</button>')).join("") + "</div>";
+}
+
+/* ---------- 5 materials ---------- */
+async function loadMaterials() {
+  const [docs] = await Promise.all([api("/materials"), refreshSubjects()]);
+  const pill = d => d.status === "indexed" ? '<span class="pill ok">Indexed</span>' : d.status === "failed" ? '<span class="pill bad">Failed</span>' : '<span class="pill warn pulse">Indexing</span>';
+  $("#matBox").innerHTML = docs.length ? docs.map(d => row(esc(d.filename), esc(d.subject) + ", added " + esc(fmtDate(d.added_at)),
+    pill(d) + '<span class="s">' + (d.pages ? plural(d.pages, "page") : "") + '</span><button class="btn sm" data-act="matDelete" data-id="' + d.id + '" data-name="' + esc(d.filename) + '">Remove</button>')).join("") : '<div class="empty">No materials yet. Upload a PDF, TXT or MD file above.</div>';
+  if (docs.some(d => d.status === "indexing")) S.pollT = setTimeout(() => { if (S.view === 5) loadMaterials().catch(() => {}); }, 1500);
+}
+async function upload() {
+  const f = $("#mFile").files[0], sub = $("#mSub").value.trim();
+  if (!f) { toast("Choose a file first.", true); return; }
+  if (!sub) { toast("Enter a subject.", true); return; }
+  const fd = new FormData(); fd.append("file", f); fd.append("subject", sub);
+  const btn = $("#mUp"); btn.disabled = true;
+  try { await api("/materials", { method: "POST", body: fd }); $("#mFile").value = ""; toast("Uploaded. Indexing..."); await loadMaterials(); }
+  finally { btn.disabled = false; }
+}
+
+/* ---------- 6 analytics ---------- */
+async function loadAnalytics() {
+  const [a] = await Promise.all([api("/analytics"), refreshDash()]);
+  const t = a.quiz_trend, n = t.length, X = i => n === 1 ? 150 : 10 + i * 280 / (n - 1), Y = v => 95 - v * 0.85;
+  const svg = n ? '<svg viewBox="0 0 300 110" width="100%" role="img" aria-label="Quiz score trend, latest ' + t[n - 1].score + ' percent">' +
+    (n > 1 ? '<polyline fill="none" stroke="#0F5C5C" stroke-width="2" points="' + t.map((q, i) => X(i).toFixed(0) + "," + Y(q.score).toFixed(0)).join(" ") + '"/>' : "") +
+    '<g fill="#0F5C5C">' + t.map((q, i) => '<circle cx="' + X(i).toFixed(0) + '" cy="' + Y(q.score).toFixed(0) + '" r="3"><title>' + esc(q.date) + ": " + q.score + '%</title></circle>').join("") + "</g></svg>" : '<div class="empty">Complete a quiz to see your trend.</div>';
+  const mx = Math.max(1, ...a.daily_minutes.map(x => x.minutes));
+  const stat = (v, l) => '<div><b style="font-size:20px;font-weight:500">' + v + '</b><div class="s" style="font-size:12px;color:var(--ink3)">' + l + "</div></div>";
+  $("#anBox").innerHTML = '<div class="panel" style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px">' + stat(a.study_hours_30d + " h", "Study time, 30 days") + stat(a.active_days_30d + "/" + a.window_days, "Active days") + stat(a.current_streak, "Current streak") + "</div>" +
+    '<div class="g" style="grid-template-columns:1fr 1fr"><div class="panel"><div class="ph2"><span>Quiz score trend</span><span>' + plural(n, "quiz") + "</span></div>" + svg + "</div>" +
+    '<div class="panel"><div class="ph2"><span>Subject comparison</span></div>' + (a.subject_comparison.length ? a.subject_comparison.map(s => row(esc(s.subject), "", bar(s.proficiency, s.proficiency < 50 ? "bad" : s.proficiency < 70 ? "warn" : "ok"))).join("") : '<div class="empty">No quiz data yet.</div>') + "</div></div>" +
+    '<div class="panel" style="margin-top:12px"><div class="ph2"><span>Daily study minutes</span><span>last 30 days</span></div><div class="chart dchart">' +
+    a.daily_minutes.map(d => '<div title="' + esc(fmtDate(d.date)) + ": " + d.minutes + ' min"><i style="height:' + (d.minutes ? Math.max(3, Math.round(d.minutes / mx * 90)) : 0) + 'px"></i></div>').join("") + "</div></div>";
+}
+
+/* ---------- actions ---------- */
+const profileDlg = async () => { const p = await api("/profile"); openForm("Your profile", [{ name: "name", label: "Name", value: p.name, required: true }, { name: "program", label: "Program", value: p.program }, { name: "term", label: "Term", value: p.term }], "Save", async v => { await send("/profile", "PUT", v); VIEWS[S.view]().catch(fail); }); };
+const ACTIONS = {
+  editProfile: profileDlg,
+  addExam: async () => { await refreshSubjects(); openForm("Add an exam", [{ name: "subject", label: "Subject", list: "subjList", required: true }, { name: "title", label: "Title", value: "Midterm", required: true }, { name: "date", label: "Date", type: "date", required: true }], "Add exam", async v => { await send("/exams", "POST", v); await refreshSubjects(); VIEWS[S.view]().catch(fail); }); },
+  logStudy: async () => { const m = +$("#logMin").value; if (!m) { toast("Enter the minutes studied.", true); return; } await send("/study-log", "POST", { minutes: m }); toast("Logged " + m + " min"); await loadOverview(); },
+  sessionStatus: async t => { await send("/sessions/" + t.dataset.id, "PATCH", { status: t.dataset.status }); await VIEWS[S.view](); refreshDash().catch(() => {}); },
+  sessionDelete: async t => { if (!confirm("Delete this session?")) return; await send("/sessions/" + t.dataset.id, "DELETE"); await VIEWS[S.view](); },
+  practice: t => { S.prefill = { sub: +t.dataset.sub, topic: t.dataset.topic }; S.quiz = null; go(3); },
+  chip: t => { const i = $("#chatIn"); i.value = t.dataset.text; i.focus(); },
+  chatSend: chatSend,
+  clearChat: async () => { if (!S.msgs.length || !confirm("Clear the whole conversation?")) return; await send("/assistant/history", "DELETE"); S.msgs = []; paintChat(); },
+  propose: propose,
+  proposalConfirm: async () => { const r = await send("/planner/proposals/" + S.proposal.id + "/confirm", "POST"); S.proposal = null; toast("Saved " + plural(r.saved, "session")); await loadPlanner(); },
+  proposalDiscard: async () => { await send("/planner/proposals/" + S.proposal.id, "DELETE"); S.proposal = null; paintProposal(); },
+  calPrev: () => shiftMonth(-1), calNext: () => shiftMonth(1),
+  quizStart: () => startQuiz(+$("#qSub").value, +$("#qCount").value, $("#qTopic").value.trim()),
+  quizOpt: quizOpt,
+  quizNext: () => { S.quiz.i++; S.quiz.fb = null; paintQuiz(); },
+  quizNew: () => { S.quiz = null; paintQuizSetup(); },
+  upload: upload,
+  matDelete: async t => { if (!confirm("Remove " + t.dataset.name + " and its indexed text?")) return; await send("/materials/" + t.dataset.id, "DELETE"); await loadMaterials(); },
+};
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g) { go(+g.dataset.go); return; }
+  const t = e.target.closest("[data-act]"); if (!t || t.disabled) return;
+  const fn = ACTIONS[t.dataset.act]; if (fn) Promise.resolve(fn(t, e)).catch(fail);
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "aSubject") paintDocs();
+  if (e.target.dataset && e.target.dataset.doc) { const id = +e.target.dataset.doc; e.target.checked ? S.uncheck.delete(id) : S.uncheck.add(id); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.id === "chatIn" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chatSend().catch(fail); }
+  if (e.target.id === "profBtn" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); profileDlg().catch(fail); }
+});
+refreshSubjects().catch(() => {});
+go(0);
+</script></body></html>
