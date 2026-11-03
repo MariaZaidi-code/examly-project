@@ -18,8 +18,15 @@ examly_agent/data/*.db
 # Secrets
 .env
 .env.*
+!.env.example
 *.key
 secrets.*
+
+# Submission artifacts
+examly_project.zip
+
+# UI verification screenshots (regenerate with webapp/backend/ui_verify.py)
+webapp/backend/ui_shots/
 
 # OS / editors
 .DS_Store

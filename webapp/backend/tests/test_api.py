@@ -4,6 +4,8 @@ tmp = tempfile.mkdtemp()
 os.environ["EXAMLY_DB"] = os.path.join(tmp, "t.db")
 os.environ["EXAMLY_TODAY"] = "2026-11-03"
 os.environ.pop("EXAMLY_LLM_URL", None)
+os.environ["EXAMLY_ENV_FILE"] = os.path.join(tmp, "no.env")   # never pick up local .env keys
+os.environ["EXAMLY_DISABLE_LLM"] = "1"                        # never call real providers from tests
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import requests, uvicorn, pytest
 from app.main import app
@@ -33,6 +35,7 @@ def test_starts_empty(api):
     d = requests.get(api + "/dashboard").json()
     assert d["next_exam"] is None and d["weakest"] == [] and d["streak_days"] == 0 and d["last7_total"] == 0
     assert len(d["last7"]) == 7 and requests.get(api + "/materials").json() == []
+    assert d["counts"] == {"documents": 0, "sessions": 0, "quizzes": 0, "answers": 0}   # drives the empty-dashboard upload prompt
 
 def test_profile_and_exam(api):
     r = requests.put(api + "/profile", json={"name": "Ayesha Khan", "program": "BS Artificial Intelligence", "term": "Fall 2026"}).json()
@@ -214,6 +217,123 @@ def test_interrupted_indexing_is_marked_failed(api):
     with adb.conn() as c:
         assert adb.one(c, "SELECT status FROM documents WHERE filename='interrupted.md'")["status"] == "failed"
         c.execute("DELETE FROM documents WHERE filename='interrupted.md'")
+
+def _stub_provider(routes):
+    """Throwaway HTTP stub: routes = {path-substring: (status, body-bytes)}."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def do_POST(self):
+            n = int(self.headers.get("Content-Length") or 0)
+            self.rfile.read(n)
+            for pat, (code, body) in routes.items():
+                if pat in self.path:
+                    self.send_response(code)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+            self.send_response(404); self.end_headers()
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, f"http://127.0.0.1:{srv.server_address[1]}"
+
+def test_key_file_and_config_resolution(tmp_path, monkeypatch):
+    from app import config
+    keyf = tmp_path / "grok.txt"
+    keyf.write_text("# Grok key\nGROK_API_KEY=abc123\n# xai-REPLACE_WITH_YOUR_KEY\n", encoding="utf-8")
+    assert config.read_key(str(keyf)) == "abc123"                    # KEY=value form + comments skipped
+    raw = tmp_path / "raw.txt"; raw.write_text("  xai-RAW-KEY-42  \n", encoding="utf-8")
+    assert config.read_key(str(raw)) == "xai-RAW-KEY-42"             # raw key line
+    assert config.read_key(str(tmp_path / "missing.txt")) == ""      # missing file is not an error
+    assert config.read_key("") == ""
+    monkeypatch.setenv("GROK_API_KEY", "env-wins")                   # env var beats the key file
+    assert config.grok_key() == "env-wins"
+    monkeypatch.delenv("GROK_API_KEY")
+    monkeypatch.setenv("GROK_KEY_FILE", str(keyf))
+    assert config.grok_key() == "abc123"
+    monkeypatch.setenv("LLM_PROVIDER_ORDER", "grok,nope")            # unknown providers are dropped later
+    assert config.provider_order() == ["grok", "nope"]
+    monkeypatch.setenv("MAX_UPLOAD_MB", "7")
+    assert config.max_upload_bytes() == 7 * 1024 * 1024
+
+def test_env_file_inline_comments_and_numbers(tmp_path, monkeypatch):
+    from app import config
+    envf = tmp_path / ".env"
+    envf.write_text("LLM_TIMEOUT_S=20    # per request\n"
+                    "LLM_TOTAL_S=45  # hard budget for the whole chain\n"
+                    'GEMINI_MODEL="gemini-3.6-flash,gemini-3.5-flash"\n',
+                    encoding="utf-8")
+    monkeypatch.setenv("EXAMLY_ENV_FILE", str(envf))
+    for k in ("LLM_TIMEOUT_S", "LLM_TOTAL_S", "GEMINI_MODEL"):       # live env must not shadow the file
+        monkeypatch.delenv(k, raising=False)
+    assert config.settings("LLM_TIMEOUT_S") == "20"                  # inline comments stripped
+    assert config.timeout_seconds() == 20.0                          # ...so the number parses
+    assert config.total_seconds() == 45.0
+    assert config.settings("GEMINI_MODEL") == "gemini-3.6-flash,gemini-3.5-flash"
+
+def test_provider_chain_falls_back_to_next(tmp_path, monkeypatch):
+    from app import llm
+    import json as _json
+    ok = _json.dumps({"candidates": [{"content": {"parts": [{"text": "gemini says hi"}]}}]}).encode()
+    srv, base = _stub_provider({"/chat/completions": (500, b"boom"),
+                                ":generateContent": (200, ok)})
+    try:
+        kf = tmp_path / "k.txt"; kf.write_text("stub-key-123\n", encoding="utf-8")
+        monkeypatch.setenv("EXAMLY_DISABLE_LLM", "0")
+        monkeypatch.setenv("LLM_PROVIDER_ORDER", "grok,gemini")
+        monkeypatch.setenv("GROK_KEY_FILE", str(kf)); monkeypatch.setenv("GROK_BASE_URL", base + "/x"); monkeypatch.setenv("GROK_MODEL", "stub")
+        monkeypatch.setenv("GEMINI_KEY_FILE", str(kf)); monkeypatch.setenv("GEMINI_BASE_URL", base); monkeypatch.setenv("GEMINI_MODEL", "stub")
+        out = llm.generate("sys", "hello")
+        assert out and out["provider"] == "gemini" and "hi" in out["text"]   # grok 500 -> chain moves on
+        st = llm.status()
+        assert st["configured"] and st["llm_connected"] and st["providers"] == ["grok", "gemini"]
+        assert st["label"] == "Grok + Gemini ready"
+    finally:
+        srv.shutdown()
+
+def test_all_providers_down_uses_extractive_answer(tmp_path, monkeypatch):
+    from app import llm, services as sv, db as adb
+    srv, base = _stub_provider({"/chat/completions": (500, b"boom"),
+                                ":generateContent": (500, b"boom")})
+    try:
+        kf = tmp_path / "k.txt"; kf.write_text("stub-key-123\n", encoding="utf-8")
+        monkeypatch.setenv("EXAMLY_DISABLE_LLM", "0")
+        monkeypatch.setenv("LLM_PROVIDER_ORDER", "grok,gemini")
+        monkeypatch.setenv("GROK_KEY_FILE", str(kf)); monkeypatch.setenv("GROK_BASE_URL", base + "/x"); monkeypatch.setenv("GROK_MODEL", "stub")
+        monkeypatch.setenv("GEMINI_KEY_FILE", str(kf)); monkeypatch.setenv("GEMINI_BASE_URL", base); monkeypatch.setenv("GEMINI_MODEL", "stub")
+        assert llm.generate("sys", "hello") is None                    # every provider failed
+        with adb.conn() as c:
+            res = sv.answer(c, "Explain third normal form")            # falls back to the excerpts
+        assert res["mode"] == "extractive" and res["grounded"] and res["citations"]
+    finally:
+        srv.shutdown()
+
+def test_register_seeds_display_name_and_keeps_edits(api):
+    from app import db as adb
+    with adb.conn() as c:
+        c.execute("UPDATE profile SET name=''")                        # fresh, empty profile
+        c.execute("DELETE FROM auth_sessions"); c.execute("DELETE FROM users")
+    s = requests.Session()
+    r = s.post(api + "/auth/register", json={"username": "maria.khan", "password": "secret123"})
+    assert r.status_code == 201
+    assert s.get(api + "/profile").json()["name"] == "Maria Khan"      # name shows as soon as you sign in
+    s.put(api + "/profile", json={"name": "Maria Zaidi"})
+    s.post(api + "/auth/logout")
+    assert s.post(api + "/auth/login", json={"username": "maria.khan", "password": "secret123"}).status_code == 200
+    assert s.get(api + "/profile").json()["name"] == "Maria Zaidi"     # a chosen name is never overwritten
+    s.post(api + "/auth/logout")
+    with adb.conn() as c:                                              # restore state for the login-gate test
+        c.execute("DELETE FROM auth_sessions"); c.execute("DELETE FROM users")
+        c.execute("UPDATE profile SET name='Ayesha Khan'")
+
+def test_upload_size_limit(api, monkeypatch):
+    monkeypatch.setenv("MAX_UPLOAD_MB", "1")
+    big = b"a" * (1024 * 1024 + 2048)
+    r = requests.post(api + "/materials", files={"file": ("big_note.txt", big)}, data={"subject_id": S["sid"]})
+    assert r.status_code == 413 and "upload limit" in r.json()["error"]
+    r = requests.post(api + "/materials", files={"file": ("small_note.txt", b"Short note. " * 20)}, data={"subject_id": S["sid"]})
+    assert r.status_code == 201                                       # normal files still upload
 
 def test_login_gate_and_session(api):
     root = api[:-4]

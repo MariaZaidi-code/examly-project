@@ -190,6 +190,45 @@ dialog h3{margin:0 0 4px;font-size:16px}
 }
 @media(min-width:821px){nav button{white-space:nowrap;font-size:13px}}
 @media(min-width:821px) and (max-width:1100px){.dash{grid-template-columns:1fr 1fr}.c3{grid-column:1/3;grid-row:auto}.wide{grid-column:1/3}}
+
+/* --- empty dashboard: upload prompt + getting-started checklist --- */
+.eh{position:relative;overflow:hidden;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#fff 25%,#F3F0FF),radial-gradient(circle at 88% 15%,#E9E3FF,transparent 55%);border:1px solid #E3DDFC}
+.eh .ehArt{display:flex;gap:10px;font-size:32px;line-height:1}
+.eh .ehArt span{display:inline-block;animation:floaty 3.2s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(108,86,232,.25))}
+.eh .ehArt span:nth-child(2){animation-delay:.55s}.eh .ehArt span:nth-child(3){animation-delay:1.1s}
+@keyframes floaty{50%{transform:translateY(-10px) rotate(-6deg)}}
+.eh .ehTxt{flex:1;min-width:250px}
+.eh h2{margin:0 0 4px;font-size:19px;background:linear-gradient(90deg,#1D1B33,#5B47D6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eh p{margin:0 0 12px;color:var(--ink2);font-size:13.5px;max-width:580px}
+.eh .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.eh .steps span{font-size:12px;padding:5px 11px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--ink2);box-shadow:0 2px 8px rgba(70,60,140,.07)}
+.eh .steps span b{color:var(--acc);margin-right:4px}
+.ck{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background .2s,transform .2s}
+.ck:hover{background:#F8F7FE;transform:translateX(3px)}
+.ck .box{width:22px;height:22px;border-radius:50%;border:2px solid var(--line2);display:grid;place-items:center;font-size:12px;color:#fff;flex:none;transition:all .3s}
+.ck.done .box{background:linear-gradient(135deg,#2FBF7E,#1F8A5F);border-color:transparent;animation:pop .4s both}
+.ck.done .box:after{content:"\2713"}
+.ck b{font-size:13.5px;font-weight:500;display:block}
+.ck small{color:var(--ink3);font-size:12px}
+.ck.done b{color:var(--ink3);text-decoration:line-through}
+.ckPrg{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:10px}
+.ckPrg i{display:block;height:100%;background:linear-gradient(90deg,#8B77F5,#5B47D6);border-radius:4px;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+/* --- drag & drop upload --- */
+.drop{border:2px dashed transparent;transition:border-color .2s,box-shadow .2s,background .2s}
+.drop.over{border-color:var(--acc);background:#F7F5FF;box-shadow:0 0 0 4px rgba(108,86,232,.14)}
+.dz{margin-top:10px;padding:16px;border-radius:12px;background:#F8F7FE;border:1px dashed var(--line2);text-align:center;cursor:pointer;color:var(--ink3);font-size:13px;transition:all .2s}
+.dz:hover{border-color:var(--acc);color:var(--acc);background:#F4F1FF}
+.dz b{display:block;color:var(--ink2);font-size:13.5px;margin-bottom:2px}
+.dz.has{border-style:solid;border-color:#BDE8D3;background:#F0FAF5;color:#1F8A5F;animation:pop .35s both}
+.dz.has b{color:#1F8A5F}
+/* --- toast variants, bell badge, confetti --- */
+#toast.ok{background:linear-gradient(135deg,#2FBF7E,#1F8A5F)}
+#toast.err{background:linear-gradient(135deg,#E5594A,#C0392B)}
+.bell .bc{position:absolute;top:-7px;right:-7px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#F26B5B;color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 4px 10px -3px rgba(242,107,91,.7);animation:pop .45s both}
+.bell .bc[hidden]{display:none}
+.cf{position:fixed;top:-16px;width:9px;height:15px;border-radius:2px;z-index:80;pointer-events:none;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translate3d(var(--dx),102vh,0) rotate(var(--rot));opacity:.85}}
+.top .btn.p{white-space:nowrap}
 </style>
 <div class="app">
 <aside>
@@ -207,8 +246,10 @@ dialog h3{margin:0 0 4px;font-size:16px}
 <section class="view on" id="v0">
  <div class="top"><div class="gr"><h1 id="ovGreet">Welcome to Examly</h1><div class="sub" id="ovSub">Let's continue your exam preparation.</div></div>
   <input class="search" id="ovSearch" placeholder="Search notes, topics, quizzes" aria-label="Search your notes">
-  <div class="bell" id="ovBell" title="Reviews due today"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52506E" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 004 0"/></svg></div></div>
+  <button class="btn p" data-go="5">Upload</button>
+  <div class="bell" id="ovBell" title="Reviews due today"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52506E" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 004 0"/></svg><span class="bc" id="ovBellN" hidden>0</span></div></div>
  <div class="dash">
+  <div id="ovIntro" class="wide" hidden></div>
   <div class="panel c1"><div class="ph2"><span>Your study activity</span><span>Last 7 days</span></div><div class="up" id="ovDelta"></div><div class="big" id="ovHours">0 <small style="font-size:13px;font-weight:400;color:var(--ink3)">hours spent</small></div><div class="chart" id="ovChart"></div></div>
   <div class="panel c2"><div class="ph2"><span>Exam readiness</span><span>Overall</span></div>
    <div class="ring"><svg width="120" height="120" viewBox="0 0 120 120"><defs><linearGradient id="rg"><stop offset="0" stop-color="#8B77F5"/><stop offset="1" stop-color="#5B47D6"/></linearGradient></defs><circle class="t" cx="60" cy="60" r="50"/><circle class="f" id="ovRingF" cx="60" cy="60" r="50"/></svg><b id="ovRing">0%</b></div>
@@ -269,10 +310,11 @@ dialog h3{margin:0 0 4px;font-size:16px}
 
 <section class="view" id="v5">
  <div class="ph"><div><h1>Study Materials</h1><div class="sub">Upload notes once. The assistant and quizzes use them as their only source.</div></div></div>
- <div class="panel"><div class="ph2"><span>Upload a file</span><span>pdf, txt or md</span></div>
+ <div class="panel drop" id="mPanel"><div class="ph2"><span>Upload a file</span><span>pdf, txt or md</span></div>
   <div class="frm">  <div><label class="lbl" for="mFile">File</label><input class="in" id="mFile" type="file" accept=".pdf,.txt,.md,.pptx,.ppt"></div>
    <div><label class="lbl" for="mSub">Subject</label><input class="in" id="mSub" list="subjList" placeholder="e.g. Database Systems"></div>
-   <div><button class="btn p" id="mUp" data-act="upload">Upload</button></div></div></div>  <div class="panel" style="margin-top:12px"><div class="ph2"><span>Your materials</span><span id="matN">0 files</span></div><div id="matBox"></div></div>
+   <div><button class="btn p" id="mUp" data-act="upload">Upload</button></div></div>
+   <div class="dz" id="mDz" data-act="pickFile" role="button" tabindex="0"><b>Drop your file here</b><span>or click to browse &middot; pdf, txt, md, pptx, ppt</span></div></div>  <div class="panel" style="margin-top:12px"><div class="ph2"><span>Your materials</span><span id="matN">0 files</span></div><div id="matBox"></div></div>
   <div class="panel" style="margin-top:12px;border-left:3px solid var(--acc);padding:14px 16px" class="uplo"><div class="ph2"><span>Supported file types</span><span>students upload their own docs</span></div><p style="font-size:12.5px;color:var(--ink2);margin:0 0 10px">Notes the assistant and quizzes read from. Uploaded files are stored only by filename and subject; the source text is sent to the backend to index it.</p><div class="chips"><span style="font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;break-inside:avoid">pdf</span><span style="font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;break-inside:avoid">txt / md</span><span style="font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;break-inside:avoid">pptx / ppt</span></div><div class="s" style="font-size:12px;color:var(--ink3);margin-top:10px">Multiple files can be uploaded for one subject. Re-upload a file to replace it.</div></div>
 </section>
 
@@ -307,7 +349,48 @@ dialog h3{margin:0 0 4px;font-size:16px}
 const API=(window.EXAMLY_API||(location.protocol==="file:"?"http://127.0.0.1:8000/api":"/api"));
 const $=(s,r)=>(r||document).querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S={view:0,subjects:[],docs:[],msgs:[],quiz:null,proposal:null,month:null,prefill:null,prefillMsg:"",uncheck:new Set(),pollT:null,initial:"?",flash:null,ovSubs:[],ovFilter:"all"};
+const S={view:0,subjects:[],docs:[],msgs:[],quiz:null,proposal:null,month:null,prefill:null,prefillMsg:"",uncheck:new Set(),pollT:null,initial:"?",flash:null,ovSubs:[],ovFilter:"all",user:null,profile:null,dragFile:null};
+const reduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* The signed-in account's name: profile name first, then the username, so the
+   sidebar, greeting and avatars always show *your* name after login. */
+const displayName=()=>{const p=((S.profile&&S.profile.name)||"").trim();if(p)return p;const u=((S.user&&S.user.username)||"").trim();if(!u)return "Your name";return u.replace(/[._-]+/g," ").replace(/\s+/g," ").trim().replace(/\b\w/g,c=>c.toUpperCase());};
+const initial=()=>{const n=displayName();return n==="Your name"?"?":n.slice(0,1).toUpperCase();};
+function animateCount(el,target,dec){
+ if(!el)return;
+ const v=Number(target)||0;
+ if(!(v>0)||reduced()){el.textContent=v.toFixed(dec||0);return;}
+ const t0=performance.now();
+ const step=t=>{const k=Math.min(1,(t-t0)/700);el.textContent=(v*(1-Math.pow(1-k,3))).toFixed(dec||0);if(k<1)requestAnimationFrame(step);};
+ el.textContent="0";requestAnimationFrame(step);
+}
+function animateCounts(root){
+ if(!root||reduced())return;
+ root.querySelectorAll("b").forEach(el=>{
+  const txt=el.textContent.trim(),m=/^([0-9]+(?:\.[0-9]+)?)/.exec(txt);
+  if(!m)return;
+  const target=parseFloat(m[1]),dec=(m[1].split(".")[1]||"").length,rest=txt.slice(m[1].length);
+  if(!(target>0))return;
+  const t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/700);el.textContent=(target*(1-Math.pow(1-k,3))).toFixed(dec)+rest;if(k<1)requestAnimationFrame(step);};
+  el.textContent="0"+rest;requestAnimationFrame(step);
+ });
+}
+function confetti(){
+ if(reduced())return;
+ const colors=["#6C56E8","#8B77F5","#2FBF7E","#F29A3C","#F26B5B","#5B47D6"];
+ for(let i=0;i<70;i++){
+  const p=document.createElement("i");p.className="cf";
+  p.style.left=(Math.random()*100)+"vw";
+  p.style.background=colors[i%colors.length];
+  p.style.setProperty("--dx",(Math.random()*160-80)+"px");
+  p.style.setProperty("--rot",(Math.random()*900-450)+"deg");
+  p.style.animationDuration=(1.6+Math.random()*1.6)+"s";
+  p.style.animationDelay=(Math.random()*0.5)+"s";
+  p.style.opacity=String(0.65+Math.random()*0.35);
+  document.body.appendChild(p);
+  p.addEventListener("animationend",()=>p.remove());
+ }
+}
 function parseTopicLine(name){name=String(name).trim();if(!name)return {term:name,area:null,page:null,closeness:null,hardcore:false,keepCards:false,skipCards:false,noNewCards:false};let s=name;let page=null,closeness=null,hardcore=false,keepCards=false,skipCards=false,noNewCards=false;
 const m=/(?:Page\s*(?:\(?(\d+)\s*\))?)/i.exec(s);if(m){page=+m[1];s=s.slice(0,m.index)+s.slice(m.index+m[0].length);}
 const m2=/(-?\s*([0-9]+)\s*%)?/.exec(s);if(m2&&m2[2])closeness=+m2[2];
@@ -329,12 +412,12 @@ function banner(on){const b=$("#banner");b.hidden=!on;if(on)b.innerHTML="Cannot 
 async function api(path,opts){let res;try{res=await fetch(API+path,opts);}catch(e){banner(true);throw new Error("Cannot reach the server");}banner(false);let data=null;try{data=await res.json();}catch(e){}if(res.status===401){location.href="/login";throw new Error("Please sign in.");}if(!res.ok)throw new Error((data&&data.error)||("Request failed ("+res.status+")"));return data;}
 const send=(path,method,body)=>api(path,{method:method,headers:{"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body)});
 let toastT;
-function toast(msg,isErr){const t=$("#toast");t.textContent=msg;t.className="on";clearTimeout(toastT);toastT=setTimeout(()=>{t.className="";},3200);}
+function toast(msg,isErr){const t=$("#toast");t.textContent=msg;t.className="on "+(isErr?"err":"ok");clearTimeout(toastT);toastT=setTimeout(()=>{t.className="";},3200);}
 const fail=e=>toast(e&&e.message?e.message:String(e),true);
 
 async function refreshSubjects(){S.subjects=await api("/subjects");$("#subjList").innerHTML=S.subjects.map(s=>'<option value="'+esc(s.name)+'">').join("");}
 const subjOptions=(sel,all)=>(all?'<option value="">All subjects</option>':"")+S.subjects.map(s=>'<option value="'+s.id+'"'+(String(sel)===String(s.id)?" selected":"")+">"+esc(s.name)+"</option>").join("");
-function paintSidebar(d){const p=d.profile||{};$("#sbExam").textContent=d.next_exam?d.next_exam.subject+(d.next_exam.days_left===0?" today":" in "+plural(d.next_exam.days_left,"day")):"No exam added";$("#sbStreak").textContent=plural(d.streak_days||0,"day");S.initial=(p.name||"?").slice(0,1).toUpperCase();$("#sbAv").textContent=S.initial;$("#sbName").textContent=p.name||"Your name";$("#sbProg").textContent=p.program||"Tap to set up";}
+function paintSidebar(d){const p=d.profile||{};S.profile=p;$("#sbExam").textContent=d.next_exam?d.next_exam.subject+(d.next_exam.days_left===0?" today":" in "+plural(d.next_exam.days_left,"day")):"No exam added";$("#sbStreak").textContent=plural(d.streak_days||0,"day");S.initial=initial();$("#sbAv").textContent=S.initial;$("#sbName").textContent=displayName();$("#sbProg").textContent=p.program||(S.user?"@"+S.user.username:"Tap to set up");}
 async function refreshDash(){const d=await api("/dashboard");paintSidebar(d);return d;}
 
 function openForm(title,fields,submitLabel,onSubmit){
@@ -360,15 +443,38 @@ function renderMini(d){
  for(let day=1;day<=days;day++){const iso=y+"-"+String(m).padStart(2,"0")+"-"+String(day).padStart(2,"0");h+='<span class="'+(iso===todayIso?"td":"")+(ex&&iso===ex?" ex":"")+'" title="'+iso+'">'+day+"</span>";}
  $("#mini").innerHTML=h;
 }
+/* Empty dashboard -> ask for documents; partially set up -> a checklist. */
+function renderIntro(d,docs){
+ const box=$("#ovIntro");if(!box)return;
+ const c=d.counts||{},total=3;
+ const done=[(c.documents||0)>0,(c.answers||0)>0,(c.sessions||0)>0].filter(Boolean).length;
+ if(!(docs&&docs.length)){
+  box.hidden=false;
+  box.innerHTML='<div class="panel eh"><div class="ehArt"><span>\u{1F4C4}</span><span>\u{1F4DA}</span><span>\u2728</span></div><div class="ehTxt"><h2>Upload your first documents</h2><p>Examly builds quizzes, flashcards and grounded assistant answers from <b>your own notes</b>. Add a PDF, TXT, MD or PPTX file and everything lights up.</p><button class="btn p" data-go="5">Upload documents</button><div class="steps"><span><b>1</b> Upload notes</span><span><b>2</b> Take a quiz</span><span><b>3</b> Close your gaps</span></div></div></div>';
+  return;
+ }
+ if(done<total){
+  const items=[
+   {ok:(c.documents||0)>0,t:"Upload your notes",s:plural(c.documents||0,"document")+" in your library",go:5},
+   {ok:(c.answers||0)>0,t:"Answer a quiz question",s:(c.answers||0)?plural(c.answers,"answer")+" recorded":"Questions come from your own files",go:3},
+   {ok:(c.sessions||0)>0,t:"Plan a study session",s:(c.sessions||0)?plural(c.sessions,"session")+" scheduled":"Let Examly propose a schedule",go:2}];
+  box.hidden=false;
+  box.innerHTML='<div class="panel"><div class="ph2"><span>Getting started</span><span>'+done+" of "+total+' done</span></div>'+items.map(i=>'<div class="ck'+(i.ok?" done":"")+'" data-go="'+i.go+'" role="button" tabindex="0"><div class="box"></div><div><b>'+i.t+"</b><small>"+i.s+"</small></div></div>").join("")+'<div class="ckPrg"><i style="width:'+(done/total*100)+'%"></i></div></div>';
+  return;
+ }
+ box.hidden=true;box.innerHTML="";
+}
 async function loadOverview(){
  const [d,w,a,docs]=await Promise.all([api("/dashboard"),api("/weak-topics"),api("/analytics"),api("/materials")]);
  paintSidebar(d);
- const p=d.profile||{},first=(p.name||"").split(" ")[0];
- $("#ovGreet").textContent=d.greeting+(first?", "+first:"");
- $("#ovSub").textContent=[p.program,p.term].filter(Boolean).join(", ")||"Tap your name in the sidebar to set up your profile.";
+ const p=d.profile||{},first=displayName().split(" ")[0];
+ $("#ovGreet").textContent=d.greeting+(first&&first!=="Your name"?", "+first:"");
+ $("#ovSub").textContent=[p.program,p.term].filter(Boolean).join(", ")||(S.user?"Signed in as @"+S.user.username+" \u00b7 tap your name to personalise your profile.":"Tap your name in the sidebar to set up your profile.");
  const mins=d.last7_total||0;
  $("#ovDelta").textContent=mins?mins+" min logged this week":"No study logged yet";
- $("#ovHours").innerHTML=(Math.round(mins/6)/10)+' <small style="font-size:13px;font-weight:400;color:var(--ink3)">hours spent</small>';
+ $("#ovHours").innerHTML='<span id="ovHoursN">0</span> <small style="font-size:13px;font-weight:400;color:var(--ink3)">hours spent</small>';
+ animateCount($("#ovHoursN"),Math.round(mins/6)/10,1);
+ renderIntro(d,docs);
  const mx=Math.max(1,...d.last7.map(x=>x.minutes));
  $("#ovChart").innerHTML=d.last7.map(x=>'<div title="'+x.minutes+' min"><i class="'+(x.minutes===mx&&mx>0?"hi":"")+'" style="height:'+(x.minutes?Math.max(6,Math.round(x.minutes/mx*100)):2)+'%" data-v="'+x.minutes+'m"></i>'+esc(x.weekday)+"</div>").join("");
  const ranked=w.ranked||[];
@@ -378,7 +484,7 @@ async function loadOverview(){
  const mastered=ranked.filter(r=>r.proficiency>=70).length,mid=ranked.filter(r=>r.proficiency>=50&&r.proficiency<70).length,weak=ranked.filter(r=>r.proficiency<50).length;
  const bandRow=(cls,n,t,s)=>'<div class="row"><div class="ico '+cls+'">'+n+'</div><div class="m"><div class="t">'+t+'</div><div class="s">'+s+"</div></div></div>";
  $("#ovBands").innerHTML=bandRow("ic1",mastered,"Mastered","topics")+bandRow("ic2",mid,"In progress","topics")+bandRow("ic4",weak,"Weak","need practice");
- $("#ovAv").textContent=S.initial;$("#ovName").textContent=p.name||"Your name";$("#ovProg").textContent=p.program||"Tap to set up";
+ $("#ovAv").textContent=initial();$("#ovName").textContent=displayName();$("#ovProg").textContent=p.program||(S.user?"@"+S.user.username:"Tap to set up");
  renderMini(d);
  $("#ovTodayN").textContent=plural(d.today_sessions.length,"session");
  $("#ovToday").innerHTML=d.today_sessions.length?d.today_sessions.map(s=>'<div class="todo '+(s.status==="done"?"on":"")+'" data-sess="'+s.id+'"><div class="cb"></div><div class="tt">'+esc(s.topic)+"<small>"+fmtTime(s.scheduled_at)+", "+s.duration_min+" min &middot; "+esc(s.subject)+"</small></div></div>").join(""):'<div class="empty">No sessions today. Use the Study Planner to schedule some.</div>';
@@ -393,12 +499,14 @@ async function loadOverview(){
  const icon=(cls,path)=>'<div class="ico '+cls+'"><svg viewBox="0 0 24 24">'+path+"</svg></div>";
  const stat=(ic,v,l)=>'<div>'+ic+'<div><b>'+v+"</b><small>"+l+"</small></div></div>";
  $("#ovStats").innerHTML=stat(icon("ic1",'<path d="M7 3h7l5 5v13H7zM14 3v5h5"/>'),docs.length,"Documents")+stat(icon("ic3",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>'),a.quiz_trend.length,"Quizzes taken")+stat(icon("ic2",'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),a.study_hours_30d+"h","Study time, 30d")+stat(icon("ic4",'<path d="M12 3c1 4 5 5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>'),d.streak_days,"Day streak");
+ animateCounts($("#ovStats"));
  $("#ovBell").title=plural(due.length,"review")+" due today";
+ const bellN=$("#ovBellN");if(bellN){bellN.hidden=!due.length;bellN.textContent=due.length;}
 }
 
 /* ---------- 1 assistant ---------- */
 function renderMsg(m){
- if(m.role==="user")return '<div class="msg u"><div class="a">'+esc(S.initial)+'</div><div class="m"><p>'+esc(m.content).replace(/\n/g,"<br>")+"</p></div></div>";
+ if(m.role==="user")return '<div class="msg u"><div class="a">'+esc(initial())+'</div><div class="m"><p>'+esc(m.content).replace(/\n/g,"<br>")+"</p></div></div>";
  const cites=(m.citations||[]).map(c=>"<details><summary>["+c.n+"] "+esc(c.filename)+", page "+c.page+"</summary><div>\""+esc(c.quote)+"\"</div></details>").join("");
  const meta=m.mode==="extractive"?'<div class="meta">Extractive answer: the best matching sentences from your notes (no language model configured).</div>':"";
  return '<div class="msg'+(m.grounded===false?" nf":"")+'"><div class="a">E</div><div class="m">'+esc(m.content).split(/\n{2,}/).map(p=>"<p>"+p.replace(/\n/g,"<br>").replace(/\[(\d+)\]/g,"<b>[$1]</b>")+"</p>").join("")+cites+meta+"</div></div>";
@@ -470,7 +578,7 @@ function paintQuizSetup(){
 }
 function paintQuiz(){
  const z=S.quiz,box=$("#quizBox");
- if(z.i>=z.qs.length){box.innerHTML='<div class="panel"><div class="ph2"><span>Quiz finished</span></div><p style="font-size:15px;margin:4px 0 12px">You got <b>'+z.score+'</b> of <b>'+z.qs.length+'</b> correct.</p><div style="display:flex;gap:8px"><button class="btn p" data-act="quizNew">New quiz</button><button class="btn" data-go="4">See weak topics</button></div></div>';return;}
+ if(z.i>=z.qs.length){if(!z.celebrated&&(z.qs.length===0||z.score/z.qs.length>=0.5)){z.celebrated=true;confetti();}box.innerHTML='<div class="panel"><div class="ph2"><span>Quiz finished</span></div><p style="font-size:15px;margin:4px 0 12px">You got <b>'+z.score+'</b> of <b>'+z.qs.length+'</b> correct.</p><div style="display:flex;gap:8px"><button class="btn p" data-act="quizNew">New quiz</button><button class="btn" data-go="4">See weak topics</button></div></div>';return;}
  const q=z.qs[z.i],fb=z.fb;
  const opts=q.options.map((o,k)=>{
   const ok=fb&&k===fb.correct_index,no=fb&&k===fb.chosen&&!fb.correct;
@@ -511,13 +619,34 @@ async function loadMaterials(){
  if(docs.some(d=>d.status==="indexing"))S.pollT=setTimeout(()=>{if(S.view===5)loadMaterials().catch(()=>{});},1500);
 }
 async function upload(){
- const f=$("#mFile").files[0],sub=$("#mSub").value.trim();
+ const f=$("#mFile").files[0]||S.dragFile,sub=$("#mSub").value.trim();
  if(!f){toast("Choose a file first.",true);return;}
  if(!sub){toast("Enter a subject.",true);return;}
  const fd=new FormData();fd.append("file",f);fd.append("subject",sub);
  const btn=$("#mUp");btn.disabled=true;
- try{await api("/materials",{method:"POST",body:fd});$("#mFile").value="";toast("Uploaded. Indexing...");await loadMaterials();}
+ try{await api("/materials",{method:"POST",body:fd});$("#mFile").value="";S.dragFile=null;paintDz();toast("Uploaded. Indexing...");await loadMaterials();}
  finally{btn.disabled=false;}
+}
+function paintDz(){
+ const dz=$("#mDz");if(!dz)return;
+ const f=$("#mFile").files[0]||S.dragFile;
+ if(f){
+  const sz=f.size<1024?f.size+" B":f.size<1048576?(f.size/1024).toFixed(0)+" KB":(f.size/1048576).toFixed(1)+" MB";
+  dz.className="dz has";dz.innerHTML="<b>"+esc(f.name)+"</b><span>"+sz+" \u00b7 ready to upload</span>";
+ }else{
+  dz.className="dz";dz.innerHTML="<b>Drop your file here</b><span>or click to browse &middot; pdf, txt, md, pptx, ppt</span>";
+ }
+}
+function initDropzone(){
+ const panel=$("#mPanel");if(!panel)return;
+ ["dragenter","dragover"].forEach(ev=>panel.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();panel.classList.add("over");}));
+ ["dragleave","drop"].forEach(ev=>panel.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();panel.classList.remove("over");}));
+ panel.addEventListener("drop",e=>{
+  const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(!f)return;
+  S.dragFile=f;paintDz();toast("File ready: "+f.name);
+  if(!$("#mSub").value.trim())$("#mSub").focus();
+ });
 }
 
 /* ---------- 6 analytics ---------- */
@@ -589,6 +718,7 @@ const ACTIONS={
  quizOpt:quizOpt,
  quizNext:()=>{S.quiz.i++;S.quiz.fb=null;paintQuiz();},
  quizNew:()=>{S.quiz=null;paintQuizSetup();},
+ pickFile:()=>{const i=$("#mFile");if(i)i.click();},
  upload:upload,
  matDelete:async t=>{if(!confirm("Remove "+t.dataset.name+" and its indexed text?"))return;await send("/materials/"+t.dataset.id,"DELETE");await loadMaterials();},
  sessionStatus:async t=>{await send("/sessions/"+t.dataset.id,"PATCH",{status:t.dataset.status});await loadPlanner();refreshDash().catch(()=>{});},
@@ -611,6 +741,7 @@ document.addEventListener("click",e=>{
 async function toggleSession(el){const done=el.classList.contains("on");await send("/sessions/"+el.dataset.sess,"PATCH",{status:done?"planned":"done"});await loadOverview();refreshDash().catch(()=>{});}
 document.addEventListener("change",e=>{
  if(e.target.id==="aSubject")paintDocs();
+ if(e.target.id==="mFile"){S.dragFile=null;paintDz();}
  if(e.target.dataset&&e.target.dataset.doc){const id=+e.target.dataset.doc;e.target.checked?S.uncheck.delete(id):S.uncheck.add(id);}
 });
 document.addEventListener("keydown",e=>{
@@ -637,8 +768,12 @@ const nav=$("#nav");
 NAMES.forEach((n,i)=>{const b=document.createElement("button");b.innerHTML=ICONS[i]+"<span>"+esc(n)+"</span>";b.onclick=()=>go(i);nav.appendChild(b);});
 function go(i){S.view=i;clearTimeout(S.pollT);document.querySelectorAll(".view").forEach((v,k)=>v.classList.toggle("on",k===i));[].forEach.call(nav.children,(b,k)=>b.classList.toggle("on",k===i));const b=nav.children[i];if(b&&nav.scrollWidth>nav.clientWidth)nav.scrollTo({left:b.offsetLeft-24,behavior:"smooth"});window.scrollTo(0,0);VIEWS[i]().catch(fail);}
 
-refreshSubjects().catch(()=>{});
-paintFocus();
-go(0);
+(async()=>{
+ try{const st=await api("/auth/status");S.user=st.user||null;}catch(e){}   // who is signed in -> show their name everywhere
+ refreshSubjects().catch(()=>{});
+ paintFocus();
+ initDropzone();
+ go(0);
+})();
 </script>
 </body></html>

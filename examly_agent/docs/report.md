@@ -7,7 +7,7 @@ A university student prepares for exams. The agent explains concepts from the st
 Environment: partially observable (it sees only notes, memory and MCP data), dynamic (exam date and scores change), single agent, human-in-the-loop for consequential actions.
 
 ## 2. Architecture
-![architecture](docs/architecture.png)
+![architecture](architecture.png)
 
 | Required component | Implementation | Where |
 |---|---|---|

@@ -41,10 +41,12 @@ Read HANDOFF.md first, then the code in app/, then finish the unchecked items
 in the Status checklist.
 
 Constraints: Python 3.13, Starlette + uvicorn + sqlite3 + pypdf only (no
-network installs were possible). Keep the LLM pluggable via env vars
-EXAMLY_LLM_URL / EXAMLY_LLM_KEY / EXAMLY_LLM_MODEL (OpenAI-compatible chat
-completions); without them fall back to extractive answers from retrieved
-chunks. Never answer outside the uploaded materials; always return citations.
+network installs were possible). LLM config lives in app/config.py (env file
+or env vars, keys read from key files at call time - nothing hardcoded): a
+Grok -> Gemini provider chain in app/llm.py with timeouts, a total budget and
+a per-key degrade cache; when no provider answers, fall back to extractive
+answers from retrieved chunks. Never answer outside the uploaded materials;
+always return citations.
 Planner proposals must not be persisted as sessions until confirmed.
 Run `python -m pytest tests` and fix failures. Do not change the JSON shapes
 documented in README.md without updating the README and tests.
@@ -60,6 +62,12 @@ documented in README.md without updating the README and tests.
 - [x] spaced repetition: `reviews` table, simplified SM-2 on each quiz answer, `GET /api/review/due`, `dashboard.reviews_due`, Overview "Reviews due today" card
 - [x] topic-scoped quiz generation: `topic` filters chunks and sentences ("Practice now" now actually focuses)
 - [x] verified against real uvicorn: `/` serves the frontend; full flow works (profile -> subject/exam -> upload -> indexed -> grounded chat with citations -> quiz -> weak topics -> topic group -> planner propose/confirm -> session done -> analytics), no server errors
+- [x] LLM provider chain: `app/config.py` (env file + env vars, key files read per call) + `app/llm.py` (grok -> gemini, comma model lists, `LLM_TIMEOUT_S`/`LLM_TOTAL_S` budget, 15-min per-key degrade), `.env.example` committed, `.env` gitignored; live E2E answers via Gemini with citations (`e2e_verify.py`)
+- [x] signed-in name everywhere: login/register seed an empty profile name from the username; frontend `displayName()` falls back to the title-cased username (sidebar, greeting, profile card, chat avatar)
+- [x] empty-dashboard upload prompt: `dashboard.counts` -> "Upload your first documents" hero + "Getting started" checklist with progress (`ui_verify.py` screenshots in `ui_shots/`)
+- [x] upload hardening: `MAX_UPLOAD_MB` -> HTTP 413, drag-and-drop dropzone in the UI
+- [x] UI polish: count-up stats, confetti on quiz finish, toast variants, bell badge for reviews due, top-bar Upload button (respects `prefers-reduced-motion`)
+- [x] tests 21/21 (`python -m pytest tests -q`); tests isolate from real keys via `EXAMLY_ENV_FILE` + `EXAMLY_DISABLE_LLM=1`
 
 ## Remaining ideas (not done)
 - LLM-generated quiz questions (currently heuristic cloze) and topic extraction.

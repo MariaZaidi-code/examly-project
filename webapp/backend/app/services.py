@@ -1,6 +1,6 @@
 """Business logic: indexing, retrieval, assistant, quiz, planner, analytics."""
 import io, os, re, json, random, math, collections, datetime as dt
-from . import db
+from . import db, config, llm
 
 STOP = set("the a an and or of to in on for with is are was were be been it its as at by from that this these those which who whom not no but if then so than into onto over under can may must should will would only each every other such their there they them we you your our he she his her also more most any all one two".split())
 LEVEL_HINT = {"Basic": "Keep it very simple.", "Standard": "", "Advanced": "Go deep and be precise."}
@@ -144,16 +144,8 @@ def best_sentence(text, q):
 
 # ---------- assistant ----------
 def llm_configured():
-    return bool(os.environ.get("EXAMLY_LLM_URL") and os.environ.get("EXAMLY_LLM_KEY"))
-
-def call_llm(system, user):
-    import requests
-    r = requests.post(os.environ["EXAMLY_LLM_URL"].rstrip("/") + "/chat/completions",
-        headers={"Authorization": "Bearer " + os.environ["EXAMLY_LLM_KEY"]},
-        json={"model": os.environ.get("EXAMLY_LLM_MODEL", "gpt-4o-mini"),
-              "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}, timeout=60)
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    """True when at least one LLM provider has a key configured."""
+    return bool(config.configured_providers())
 
 def answer(c, message, subject_id=None, level="Standard", document_ids=None):
     hits = retrieve(c, message, subject_id, document_ids)
@@ -162,13 +154,14 @@ def answer(c, message, subject_id=None, level="Standard", document_ids=None):
                 "citations": [], "grounded": False, "mode": "none"}
     cites = [{"n": i + 1, "document_id": h["doc_id"], "filename": h["filename"], "page": h["page"], "quote": h["text"][:300]} for i, h in enumerate(hits)]
     ctx = "\n".join(f"[{x['n']}] ({x['filename']}, p.{x['page']}) {h['text']}" for x, h in zip(cites, hits))
-    if llm_configured():
-        try:
-            sys_p = ("You are a study assistant. Answer ONLY from the numbered excerpts. Cite like [1]. "
-                     "If the excerpts do not contain the answer, say so. " + LEVEL_HINT.get(level, ""))
-            return {"answer": call_llm(sys_p, f"Excerpts:\n{ctx}\n\nQuestion: {message}"), "citations": cites, "grounded": True, "mode": "llm"}
-        except Exception:
-            pass
+    if config.configured_providers():
+        sys_p = ("You are a study assistant. Answer ONLY from the numbered excerpts. Cite like [1]. "
+                 "If the excerpts do not contain the answer, say so. " + LEVEL_HINT.get(level, ""))
+        gen = llm.generate(sys_p, f"Excerpts:\n{ctx}\n\nQuestion: {message}")
+        if gen:
+            return {"answer": gen["text"], "citations": cites, "grounded": True,
+                    "mode": "llm", "provider": gen["provider"]}
+    # No provider configured, or every provider failed: answer from the excerpts themselves.
     q = set(tok(message))
     body = " ".join(f"{best_sentence(h['text'], q)} [{i + 1}]" for i, h in enumerate(hits[:2]))
     return {"answer": body, "citations": cites, "grounded": True, "mode": "extractive"}

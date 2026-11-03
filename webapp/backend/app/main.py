@@ -1,5 +1,5 @@
 """Examly API (Starlette). Run: uvicorn app.main:app --reload"""
-import datetime as dt, calendar, os
+import datetime as dt, calendar, os, re
 from starlette.applications import Starlette
 from starlette.background import BackgroundTask
 from starlette.middleware import Middleware
@@ -7,7 +7,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, FileResponse, PlainTextResponse, RedirectResponse
 from starlette.routing import Route
-from . import db, services as sv, auth
+from . import db, services as sv, auth, config, llm
 
 # The single-page frontend lives next to backend/ (webapp/frontend.html) and is served at "/".
 FRONTEND = os.environ.get("EXAMLY_FRONTEND") or os.path.join(os.path.dirname(__file__), "..", "..", "frontend.html")
@@ -80,12 +80,15 @@ async def dashboard(req):
         weak = sorted(sv.topic_stats(c), key=lambda s: s["proficiency"])
         due = sv.due_reviews(c)
         hour = dt.datetime.now().hour
+        counts = {k: db.one(c, f"SELECT COUNT(*) n FROM {k}")["n"]
+                  for k in ("documents", "sessions", "quizzes", "answers")}
         return JSONResponse({
             "greeting": "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening",
             "profile": p, "next_exam": ex, "streak_days": sv.streak(c),
             "today_sessions": today_s, "last7": last7, "last7_total": sum(x["minutes"] for x in last7),
             "weakest": [{**w, "band": sv.band(w["proficiency"])} for w in weak[:3]],
             "reviews_due": due,
+            "counts": counts,
             "recommended": ({"topic": weak[0]["topic"], "subject": weak[0]["subject"], "proficiency": weak[0]["proficiency"], "answers": weak[0]["answers"]} if weak else None),
         })
 
@@ -93,6 +96,10 @@ async def dashboard(req):
 async def materials(req):
     with db.conn() as c:
         if req.method == "POST":
+            max_bytes = config.max_upload_bytes()
+            cl = req.headers.get("content-length") or ""
+            if cl.isdigit() and int(cl) > max_bytes + 65536:   # fast path (multipart overhead allowed)
+                return err(f"file is larger than the {max_bytes // (1024 * 1024)} MB upload limit", 413)
             form = await req.form()
             f = form.get("file")
             if f is None or not hasattr(f, "filename"): return err("file required")
@@ -100,6 +107,8 @@ async def materials(req):
             if not sid: return err("subject or subject_id required")
             data = await f.read()
             if not data: return err("empty file")
+            if len(data) > max_bytes:                          # exact check after reading
+                return err(f"file is larger than the {max_bytes // (1024 * 1024)} MB upload limit", 413)
             ext = f.filename.lower().rsplit(".", 1)[-1]
             if ext not in ("pdf", "txt", "md", "pptx", "ppt"): return err("only pdf, txt, md, pptx or ppt supported")
             old = db.one(c, "SELECT id FROM documents WHERE subject_id=? AND filename=?", (sid, f.filename))
@@ -122,7 +131,8 @@ async def material_delete(req):
 
 # ---- assistant ----
 async def assistant_status(req):
-    return JSONResponse({"llm_connected": sv.llm_configured(), "label": "Language model connected" if sv.llm_configured() else "Extractive mode (no language model configured)"})
+    st = llm.status()
+    return JSONResponse({"llm_connected": st["configured"], "label": st["label"], "providers": st["providers"]})
 
 async def assistant_chat(req):
     d = await body(req)
@@ -284,8 +294,7 @@ async def activity(req):
         for w in weak: w["band"] = sv.band(w["proficiency"])
         due = sv.due_reviews(c)
         return JSONResponse({
-            "assistant": {"llm_connected": sv.llm_configured(),
-                          "label": "Language model connected" if sv.llm_configured() else "Extractive mode (no language model configured)"},
+            "assistant": llm.status(),
             "recent": list(reversed(msgs)),
             "counts": {"messages": db.one(c, "SELECT COUNT(*) n FROM messages")["n"],
                        "documents": db.one(c, "SELECT COUNT(*) n FROM documents")["n"],
@@ -297,6 +306,17 @@ async def activity(req):
         })
 
 # ---- auth ----
+def seed_display_name(c, username):
+    """Fill an empty profile name from the account name, so a signed-in user
+    always sees their own name (it stays editable in the profile dialog)."""
+    p = db.one(c, "SELECT name FROM profile WHERE id=1")
+    if p and (p["name"] or "").strip():
+        return
+    words = [w for w in re.split(r"[._\-]+", (username or "").strip()) if w]
+    display = " ".join(w[:1].upper() + w[1:].lower() for w in words)
+    if display:
+        c.execute("UPDATE profile SET name=? WHERE id=1", (display,))
+
 def set_session_cookie(resp, token, exp):
     resp.set_cookie(auth.COOKIE, token, max_age=auth.SESSION_DAYS * 86400, httponly=True, samesite="lax", path="/")
 
@@ -315,6 +335,7 @@ async def auth_register(req):
             return err(str(e), 409)
         except ValueError as e:
             return err(str(e))
+        seed_display_name(c, u["username"])
         token, exp = auth.create_session(c, u["id"])
     resp = JSONResponse({"ok": True, "user": u}, status_code=201)
     set_session_cookie(resp, token, exp)
@@ -326,6 +347,7 @@ async def auth_login(req):
         u = auth.get_user(c, d.get("username") or "")
         if not u or not auth.verify(d.get("password") or "", u["salt"], u["pass_hash"]):
             return err("Wrong username or password.", 401)
+        seed_display_name(c, u["username"])
         token, exp = auth.create_session(c, u["id"])
     resp = JSONResponse({"ok": True, "user": {"id": u["id"], "username": u["username"]}})
     set_session_cookie(resp, token, exp)
