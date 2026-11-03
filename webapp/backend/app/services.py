@@ -9,12 +9,52 @@ def tok(s):
     return [w for w in re.findall(r"[a-z0-9]+", s.lower()) if w not in STOP and len(w) > 1]
 
 # ---------- materials ----------
+_PPTX_EXTRACTED = {}   # content_hash -> list of slide texts; cached so re-ingest does not reparse
+
+def _pptx_extract(filename, data, content_hash):
+    if content_hash in _PPTX_EXTRACTED: return _PPTX_EXTRACTED[content_hash]
+    try:
+        from pptx import Presentation
+    except Exception:
+        _PPTX_EXTRACTED[content_hash] = _PPTX_EXTRACTED.get(content_hash)  # keep None so a missing library fails once
+        return _PPTX_EXTRACTED.get(content_hash)
+    try:
+        prs = Presentation(io.BytesIO(data))
+        slides = []
+        for slide in prs.slides:
+            parts = []
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    parts.append(shape.text_frame.text)
+                if shape.has_table:
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            parts.append(cell.text)
+            txt = "\n".join(parts).strip()
+            if txt:
+                slides.append(txt)
+        if not slides:
+            _PPTX_EXTRACTED[content_hash] = []
+            return []
+        _PPTX_EXTRACTED[content_hash] = slides
+        return slides
+    except Exception:
+        _PPTX_EXTRACTED[content_hash] = None
+        return None
+
+
 def extract_pages(filename, data):
     ext = os.path.splitext(filename.lower())[1]
+    content_hash = str(hash((filename.lower(), data)))
     if ext == ".pdf":
         from pypdf import PdfReader
         r = PdfReader(io.BytesIO(data))
-        return [(p.extract_text() or "") for p in r.pages]
+        _PPTX_EXTRACTED[content_hash] = [(p.extract_text() or "") for p in r.pages]
+        return _PPTX_EXTRACTED[content_hash]
+    if ext == ".pptx":
+        out = _pptx_extract(filename, data, content_hash)
+        if out is None: raise RuntimeError("pptx extraction failed")
+        return out
     text = data.decode("utf-8", errors="ignore")
     if not text.strip(): return []
     size, pages, cur = 2500, [], ""
@@ -23,20 +63,49 @@ def extract_pages(filename, data):
             pages.append(cur); cur = ""
         cur += para + "\n\n"
     if cur.strip(): pages.append(cur)
+    _PPTX_EXTRACTED[content_hash] = pages
     return pages
 
 def index_document(doc_id, filename, data):
-    """Runs in background; flips status indexing -> indexed (or failed)."""
+    """Runs in background; flips status indexing -> indexed (or failed). Re-indexing a document resets its chunks first. Supports pdf, txt, md and pptx."""
     try:
         pages = extract_pages(filename, data)
+        # Slides already have natural boundaries, so keep each slide as its own page and split chunks within it.
+        pages = _normalize_pages(filename, pages)
         with db.conn() as c:
+            c.execute("DELETE FROM chunks WHERE document_id=?", (doc_id,))
+            n_chunks = 0
             for i, t in enumerate(pages, 1):
                 for ch in split_chunks(t):
                     c.execute("INSERT INTO chunks(document_id,page,text) VALUES(?,?,?)", (doc_id, i, ch))
-            c.execute("UPDATE documents SET pages=?, status=? WHERE id=?", (len(pages), "indexed" if pages else "failed", doc_id))
+                    n_chunks += 1
+            c.execute("UPDATE documents SET pages=?, status=? WHERE id=?", (len(pages), "indexed" if pages and n_chunks else "failed", doc_id))
     except Exception:
         with db.conn() as c:
             c.execute("UPDATE documents SET status='failed' WHERE id=?", (doc_id,))
+
+
+def _normalize_pages(filename, pages):
+    # For text/markdown split into chunck-sized pages, judge "pages" by estimated page count.
+    ext = os.path.splitext(filename.lower())[1]
+    if ext == ".pptx":
+        # Each slide is a real page.
+        return pages
+    if not pages: return pages
+    total = sum(len(t) for t in pages)
+    if total > 0 and len(pages) < 2 and ext != ".pptx":
+        # A single chunked page for a long text file -> count estimated pages so the UI reads sensibly.
+        estimated = max(1, int(round(total / 2500)))
+        if estimated > 1:
+            merged = "\n\n".join(pages)
+            out, cur = [], ""
+            for para in merged.split("\n\n"):
+                if len(cur) + len(para) > 2500 and cur:
+                    out.append(cur); cur = ""
+                cur += para + "\n\n"
+            if cur.strip(): out.append(cur)
+            return out
+    return pages
 
 def split_chunks(text, target=600):
     text = re.sub(r"\s+", " ", text).strip()
@@ -105,8 +174,11 @@ def answer(c, message, subject_id=None, level="Standard", document_ids=None):
     return {"answer": body, "citations": cites, "grounded": True, "mode": "extractive"}
 
 # ---------- quiz ----------
-def make_cloze(text, pool):
+def make_cloze(text, pool, focus=None):
     sents = [s for s in re.split(r"(?<=[.!?])\s+", text) if 8 <= len(s.split()) <= 40]
+    if focus:                                  # topic-scoped practice: prefer sentences about the topic
+        hit = [s for s in sents if focus & set(tok(s))]
+        if hit: sents = hit
     random.shuffle(sents)
     for s in sents:
         cands = [w for w in re.findall(r"[A-Za-z]{6,}", s) if w.lower() not in STOP]
@@ -121,20 +193,15 @@ def make_cloze(text, pool):
         return prompt, opts, opts.index(target.lower()), s
     return None
 
-def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
-    sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"
-    args = [subject_id]
-    if document_ids: sql += " AND d.id IN (%s)" % ",".join("?" * len(document_ids)); args += document_ids
-    chunks = db.rows(c, sql, args)
-    if not chunks: return None
+def _build_quiz(c, subject_id, chunks, count, topic, focus=None):
     pool = list({w for ch in chunks for w in re.findall(r"[A-Za-z]{6,}", ch["text"]) if w.lower() not in STOP})
     random.shuffle(chunks)
-    qid_list, made = [], []
+    made = []
     c.execute("INSERT INTO quizzes(subject_id,created_at) VALUES(?,?)", (subject_id, db.now_iso()))
     quiz_id = c.execute("SELECT last_insert_rowid()").fetchone()[0]
     for ch in chunks * 3:
         if len(made) >= count: break
-        m = make_cloze(ch["text"], pool)
+        m = make_cloze(ch["text"], pool, focus)
         if not m or any(m[3] == x for x in made): continue
         prompt, opts, ci, sent = m
         tname = topic or os.path.splitext(ch["filename"])[0].replace("_", " ")
@@ -146,6 +213,23 @@ def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
     if not made:
         c.execute("DELETE FROM quizzes WHERE id=?", (quiz_id,)); return None
     return quiz_id
+
+def generate_quiz(c, subject_id, count=5, topic=None, document_ids=None):
+    sql = "SELECT ch.text, ch.page, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed' AND d.subject_id=?"
+    args = [subject_id]
+    if document_ids: sql += " AND d.id IN (%s)" % ",".join("?" * len(document_ids)); args += document_ids
+    chunks = db.rows(c, sql, args)
+    if not chunks: return None
+    focus = set(tok(topic)) if topic else None
+    attempts = []
+    if focus:                                  # topic-scoped first, so "Practice now" really targets the weak topic
+        matched = [ch for ch in chunks if focus & set(tok(ch["text"]))]
+        if matched: attempts.append((matched, focus, topic))
+    attempts.append((chunks, None, None))      # fall back to the whole subject rather than failing
+    for pool_chunks, foc, label in attempts:
+        qid = _build_quiz(c, subject_id, list(pool_chunks), count, label, foc)
+        if qid: return qid
+    return None
 
 def public_question(q, reveal=False):
     out = {"id": q["id"], "position": q["position"], "prompt": q["prompt"], "options": db.jloads(q["options"], [])}
@@ -183,6 +267,61 @@ def topic_stats(c, subject_id=None):
 
 def band(p):
     return "bad" if p < 50 else "warn" if p < 70 else "ok"
+
+# ---------- spaced repetition ----------
+REVIEW_START = (1, 3, 7)   # first successful intervals, in days
+MAX_INTERVAL = 180
+
+def sm2_update(c, topic_id, correct, day=None):
+    """Simplified SM-2: correct answers spread the next review out, a wrong answer resets it to tomorrow."""
+    if not topic_id: return None
+    day = day or db.today()
+    r = db.one(c, "SELECT * FROM reviews WHERE topic_id=?", (topic_id,))
+    ease, reps, interval, lapses = (r["ease"], r["reps"], r["interval_days"], r["lapses"]) if r else (2.5, 0, 0, 0)
+    if correct:
+        interval = REVIEW_START[reps] if reps < len(REVIEW_START) else max(interval + 1, round(interval * ease))
+        reps += 1
+    else:
+        interval, reps, lapses = 1, 0, lapses + 1
+        ease = max(1.3, ease - 0.2)
+    interval = min(interval, MAX_INTERVAL)
+    due = (day + dt.timedelta(days=interval)).isoformat()
+    c.execute("INSERT OR REPLACE INTO reviews(topic_id,ease,interval_days,reps,lapses,due,last_reviewed) VALUES(?,?,?,?,?,?,?)",
+              (topic_id, ease, interval, reps, lapses, due, day.isoformat()))
+    return {"topic_id": topic_id, "interval_days": interval, "due": due, "reps": reps, "lapses": lapses, "ease": round(ease, 2)}
+
+def flashcards(c, limit=20):
+    """Cards are the quiz questions already built from the student's notes; a card is due when its topic's review is due."""
+    today = db.today().isoformat()
+    rows = db.rows(c, """SELECT q.id question_id, q.prompt, q.options, q.correct_index, q.explanation, q.source_file, q.source_page,
+                              t.id topic_id, t.name topic, s.id subject_id, s.name subject, r.due, r.interval_days, r.reps
+                       FROM questions q JOIN topics t ON t.id=q.topic_id JOIN subjects s ON s.id=t.subject_id
+                       LEFT JOIN reviews r ON r.topic_id=t.id ORDER BY q.id DESC""")
+    cards = []
+    for q in rows:
+        if q["due"] and q["due"] > today: continue
+        opts = db.jloads(q["options"], [])
+        if not (0 <= q["correct_index"] < len(opts)): continue
+        cards.append({"question_id": q["question_id"], "topic_id": q["topic_id"], "topic": q["topic"],
+                      "subject_id": q["subject_id"], "subject": q["subject"], "front": q["prompt"],
+                      "back": opts[q["correct_index"]], "explanation": q["explanation"],
+                      "source": {"file": q["source_file"], "page": q["source_page"]},
+                      "due": q["due"], "interval_days": q["interval_days"], "reps": q["reps"]})
+    return {"total": len(rows), "due_count": len(cards), "mastered": db.one(c, "SELECT COUNT(*) n FROM reviews WHERE interval_days>=7")["n"],
+            "cards": cards[:limit]}
+
+def due_reviews(c, day=None):
+    day = day or db.today()
+    stats = {s["topic_id"]: s for s in topic_stats(c)}
+    rows = db.rows(c, """SELECT r.topic_id, r.due, r.interval_days, r.reps, r.lapses, r.ease, t.name topic, t.area, s.id subject_id, s.name subject
+                         FROM reviews r JOIN topics t ON t.id=r.topic_id JOIN subjects s ON s.id=t.subject_id
+                         WHERE r.due<=? ORDER BY r.due, t.name""", (day.isoformat(),))
+    out = []
+    for r in rows:
+        st = stats.get(r["topic_id"], {})
+        p = st.get("proficiency")
+        out.append({**r, "proficiency": p, "band": band(p) if p is not None else None})
+    return out
 
 # ---------- study log / streak ----------
 def minutes_by_day(c, days):

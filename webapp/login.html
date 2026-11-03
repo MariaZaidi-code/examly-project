@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign in to Examly</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F4FB;--surface:#fff;--line:#ECEBF5;--line2:#DDDBEE;--ink:#1D1B33;--ink2:#52506E;--ink3:#8A88A6;--acc:#6C56E8;--bad:#C0392B}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:14px/1.5 Geist,system-ui,sans-serif;padding:20px}
+body:before,body:after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(70px);pointer-events:none}
+body:before{width:520px;height:520px;left:12%;top:-160px;background:#DCD4FF;opacity:.75}
+body:after{width:460px;height:460px;right:-100px;bottom:-140px;background:#FFE2CC;opacity:.7}
+.card{width:100%;max-width:400px;background:#fff;border-radius:22px;padding:30px 28px;box-shadow:0 24px 60px -30px rgba(70,60,140,.45)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;margin-bottom:22px}
+.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-size:14px;background:linear-gradient(135deg,#8B77F5,#5B47D6);box-shadow:0 6px 14px -6px rgba(108,86,232,.7)}
+h1{margin:0 0 4px;font-size:22px;letter-spacing:-.01em}
+p.sub{margin:0 0 18px;color:var(--ink3);font-size:13px}
+label{display:block;font-size:12px;color:var(--ink3);margin:12px 0 5px}
+input{width:100%;font:inherit;border:1px solid var(--line2);border-radius:11px;padding:10px 12px;background:#fff;color:var(--ink)}
+input:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{width:100%;font:inherit;font-weight:500;margin-top:18px;padding:11px 14px;border:0;border-radius:11px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#7C68F0,#5B47D6);box-shadow:0 8px 18px -8px rgba(108,86,232,.7)}
+button:disabled{opacity:.6;cursor:default}
+.err{min-height:18px;color:var(--bad);font-size:12.5px;margin-top:10px}
+.note{color:var(--ink3);font-size:12px;margin:16px 0 0}
+.hint{font-size:12px;color:var(--ink3);margin-top:10px}
+</style></head>
+<body>
+<main class="card">
+ <div class="brand"><div class="mark">E</div>Examly</div>
+ <h1 id="title">Sign in</h1>
+ <p class="sub" id="sub">Welcome back. Sign in to your study workspace.</p>
+ <form id="form" novalidate>
+  <label for="u">Username</label>
+  <input id="u" name="username" autocomplete="username" required autofocus>
+  <label for="p">Password</label>
+  <input id="p" name="password" type="password" autocomplete="current-password" required>
+  <div class="err" id="err" role="alert"></div>
+  <button id="b" type="submit">Sign in</button>
+ </form>
+ <p class="hint" id="hint"></p>
+ <p class="note">This is a single-user workspace. Your notes, quizzes and plan stay on this machine. Upload your own PDFs, text notes, or PPTX/PPT decks under Study Materials so the assistant and quizzes use them. </p>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let mode="login";
+async function init(){
+ try{
+  const r=await fetch("/api/auth/status",{headers:{"Accept":"application/json"}});
+  const d=await r.json();
+  if(d.user){location.replace("/");return;}
+  if(!d.login_required){
+   mode="register";
+   $("#title").textContent="Create your account";
+   $("#sub").textContent="Set up the one account that protects this workspace.";
+   $("#b").textContent="Create account";
+   $("#p").setAttribute("autocomplete","new-password");
+   $("#hint").textContent="Use at least 6 characters. There is no password reset, so keep it safe.";
+  }
+ }catch(e){
+  $("#err").textContent="Cannot reach the Examly server. Start it with: uvicorn app.main:app";
+ }
+}
+$("#form").addEventListener("submit",async ev=>{
+ ev.preventDefault();
+ const username=$("#u").value.trim(),password=$("#p").value;
+ const err=$("#err"),btn=$("#b");
+ err.textContent="";
+ if(!username||!password){err.textContent="Enter a username and password.";return;}
+ btn.disabled=true;
+ try{
+  const path=mode==="register"?"/api/auth/register":"/api/auth/login";
+  const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||("Request failed ("+r.status+")"));
+  location.replace("/");
+ }catch(e){
+  err.textContent=e.message;
+  btn.disabled=false;
+ }
+});
+init();
+</script>
+</body></html>

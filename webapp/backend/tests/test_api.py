@@ -72,12 +72,55 @@ def test_quiz_flow_and_weak_topics(api):
     assert a.status_code == 400
     a = requests.post(f"{api}/quizzes/{q['id']}/questions/{first['id']}/answer", json={"chosen": wrong}).json()
     assert "explanation" in a and a["source"]["file"] == "dbms_normalization.txt"
+    assert a["review"]["interval_days"] == 1 and a["review"]["due"] == "2026-11-04"   # first review is scheduled for tomorrow
     assert requests.post(f"{api}/quizzes/{q['id']}/questions/{first['id']}/answer", json={"chosen": wrong}).status_code == 409
     v = requests.get(f"{api}/quizzes/{q['id']}").json()
     assert v["answered"] == 1 and v["questions"][0]["answered"] and "correct_index" in v["questions"][0]
     w = requests.get(api + "/weak-topics").json()
     assert w["ranked"][0]["answers"] == 1 and w["heatmap"]["rows"][0]["subject"] == "Database Systems"
     assert len(requests.get(api + "/analytics").json()["quiz_trend"]) == 1
+
+def test_topic_area_groups_heatmap(api):
+    tid = requests.get(api + "/weak-topics").json()["ranked"][0]["topic_id"]
+    assert requests.put(f"{api}/topics/{tid}", json={}).status_code == 400
+    assert requests.put(f"{api}/topics/{tid}", json={"area": "x" * 41}).status_code == 400
+    assert requests.put(f"{api}/topics/99999", json={"area": "Schema"}).status_code == 404
+    assert requests.put(f"{api}/topics/{tid}", json={"area": "Schema"}).json() == {"id": tid, "area": "Schema"}
+    w = requests.get(api + "/weak-topics").json()
+    assert "Schema" in w["heatmap"]["columns"] and w["heatmap"]["rows"][0]["cells"]["Schema"] is not None
+    requests.put(f"{api}/topics/{tid}", json={"area": None})
+    assert "Schema" not in requests.get(api + "/weak-topics").json()["heatmap"]["columns"]
+
+def test_topic_scoped_quiz_uses_matching_sentences(api):
+    r = requests.post(api + "/quizzes", json={"subject_id": S["sid"], "count": 4, "topic": "deadlock"})
+    assert r.status_code == 201
+    qs = r.json()["questions"]
+    assert qs and all("deadlock" in (x["prompt"] + " " + " ".join(x["options"])).lower() for x in qs)
+    assert requests.post(api + "/quizzes", json={"subject_id": S["sid"], "count": 2, "topic": "quantum chromodynamics"}).status_code == 201
+
+def test_review_schedule_and_due_queue(api):
+    from app import db as adb, services as asv
+    import datetime as dt
+    tid = requests.get(api + "/weak-topics").json()["ranked"][0]["topic_id"]
+    with adb.conn() as c:
+        c.execute("DELETE FROM reviews")
+        first = asv.sm2_update(c, tid, True, day=dt.date(2026, 11, 3))
+        assert first["interval_days"] == 1 and first["due"] == "2026-11-04"
+        second = asv.sm2_update(c, tid, True, day=dt.date(2026, 11, 4))
+        assert second["interval_days"] == 3 and second["due"] == "2026-11-07"
+    assert requests.get(api + "/review/due").json()["count"] == 0       # scheduled for the 7th, not today
+    os.environ["EXAMLY_TODAY"] = "2026-11-07"
+    try:
+        due = requests.get(api + "/review/due").json()
+        assert due["count"] == 1 and due["due"][0]["topic_id"] == tid
+        assert due["due"][0]["band"] in ("bad", "warn", "ok")
+        assert len(requests.get(api + "/dashboard").json()["reviews_due"]) == 1
+    finally:
+        os.environ["EXAMLY_TODAY"] = "2026-11-03"
+    with adb.conn() as c:
+        lapse = asv.sm2_update(c, tid, False, day=dt.date(2026, 11, 7))
+        assert lapse["interval_days"] == 1 and lapse["lapses"] == 1 and lapse["due"] == "2026-11-08"
+        c.execute("DELETE FROM reviews")
 
 def test_planner_proposal_not_saved_until_confirmed(api):
     p = requests.post(api + "/planner/propose", json={"days": 3, "start_time": "18:00"}).json()
@@ -103,9 +146,89 @@ def test_session_completion_feeds_streak_and_dashboard(api):
     a = requests.get(api + "/analytics").json()
     assert a["active_days_30d"] == 1 and a["study_hours_30d"] == 0.8
 
+def test_flashcards_and_review_grading(api):
+    f = requests.get(api + "/flashcards").json()
+    assert f["total"] >= 1 and f["due_count"] >= 1 and f["cards"]
+    c = f["cards"][0]
+    assert c["front"] and c["back"] and c["source"]["file"] == "dbms_normalization.txt"
+    assert requests.post(f"{api}/review/{c['topic_id']}", json={"correct": "yes"}).status_code == 400
+    assert requests.post(f"{api}/review/99999", json={"correct": True}).status_code == 404
+    r = requests.post(f"{api}/review/{c['topic_id']}", json={"correct": True}).json()
+    assert r["review"]["interval_days"] == 1
+    assert requests.get(api + "/flashcards").json()["due_count"] < f["due_count"]   # topic rescheduled, cards no longer due
+    assert requests.get(api + "/flashcards?limit=1").json()["cards"][0:1] and len(requests.get(api + "/flashcards?limit=1").json()["cards"]) == 1
+    assert requests.get(api + "/flashcards?limit=x").status_code == 400
+
+def test_activity_returns_real_data(api):
+    a = requests.get(api + "/activity").json()
+    assert a["assistant"]["llm_connected"] is False
+    assert a["counts"]["documents"] == 1 and a["counts"]["answers"] >= 1 and a["counts"]["quizzes"] >= 1
+    assert a["memory"]["profile"]["name"] == "Ayesha Khan"
+    assert a["memory"]["exams"] and a["memory"]["weakest"]
+    assert a["recent"] and a["recent"][-1]["role"] == "assistant"
+
 def test_delete_material_cascades(api):
     mid = requests.get(api + "/materials").json()[0]["id"]
     requests.delete(f"{api}/materials/{mid}")
     assert requests.get(api + "/materials").json() == []
     r = requests.post(api + "/assistant/chat", json={"message": "Explain third normal form"}).json()
     assert r["grounded"] is False
+
+def test_ingest_six_documents_stays_correct(api):
+    from pathlib import Path
+    from app import db as adb
+    files = sorted((Path(__file__).resolve().parent.parent / "sample_materials" / "database_systems").glob("*.md"))
+    assert len(files) == 6
+    sid = next(x["id"] for x in requests.post(api + "/subjects", json={"name": "Database Systems"}).json() if x["name"] == "Database Systems")
+    for f in files:
+        r = requests.post(api + "/materials", files={"file": (f.name, f.read_bytes(), "text/markdown")}, data={"subject_id": sid})
+        assert r.status_code == 201
+    for _ in range(120):
+        docs = requests.get(api + "/materials", params={"subject_id": sid}).json()
+        if docs and all(d["status"] != "indexing" for d in docs): break
+        time.sleep(0.1)
+    assert len(docs) == 6
+    assert all(d["status"] == "indexed" and d["pages"] >= 1 and d["chunks"] >= 1 for d in docs)
+    with adb.conn() as c:
+        assert adb.one(c, "SELECT COUNT(*) n FROM chunks")["n"] >= 6        # persisted, not only in memory
+    names = {d["filename"] for d in docs}
+    r = requests.post(api + "/assistant/chat", json={"message": "Explain third normal form", "subject_id": sid}).json()
+    assert r["grounded"] and r["citations"] and r["citations"][0]["filename"] in names
+    # Re-uploading the same filename replaces the old document instead of duplicating stale text.
+    f = files[0]
+    changed = ("Third normal form removes transitive dependencies so that non key attributes depend only on the primary key. " * 12).encode()
+    assert requests.post(api + "/materials", files={"file": (f.name, changed, "text/markdown")}, data={"subject_id": sid}).status_code == 201
+    for _ in range(80):
+        docs = requests.get(api + "/materials", params={"subject_id": sid}).json()
+        if len(docs) == 6 and all(d["status"] == "indexed" for d in docs): break
+        time.sleep(0.1)
+    assert len(docs) == 6 and len({d["filename"] for d in docs}) == 6
+    assert requests.post(api + "/quizzes", json={"subject_id": sid, "count": 5}).status_code == 201
+
+def test_interrupted_indexing_is_marked_failed(api):
+    from app import db as adb
+    with adb.conn() as c:
+        sid = adb.one(c, "SELECT id FROM subjects ORDER BY id LIMIT 1")["id"]
+        c.execute("INSERT INTO documents(subject_id,filename,added_at,status) VALUES(?,?,?,'indexing')", (sid, "interrupted.md", "2026-11-03"))
+    adb.init()
+    with adb.conn() as c:
+        assert adb.one(c, "SELECT status FROM documents WHERE filename='interrupted.md'")["status"] == "failed"
+        c.execute("DELETE FROM documents WHERE filename='interrupted.md'")
+
+def test_login_gate_and_session(api):
+    root = api[:-4]
+    s = requests.Session()
+    assert s.get(api + "/auth/status").json()["login_required"] is False
+    assert s.post(api + "/auth/register", json={"username": "ab", "password": "secret123"}).status_code == 400
+    assert s.post(api + "/auth/register", json={"username": "Ayesha", "password": "secret123"}).status_code == 201
+    assert s.get(api + "/dashboard").status_code == 200
+    assert requests.get(api + "/dashboard").status_code == 401              # a client without the cookie is locked out
+    assert requests.get(root + "/", allow_redirects=False).status_code == 303
+    assert requests.get(root + "/login").status_code == 200
+    assert s.post(api + "/auth/logout").status_code == 200
+    assert s.get(api + "/dashboard").status_code == 401
+    assert s.post(api + "/auth/login", json={"username": "ayesha", "password": "wrong"}).status_code == 401
+    r = s.post(api + "/auth/login", json={"username": "ayesha", "password": "secret123"})
+    assert r.status_code == 200 and r.json()["user"]["username"] == "ayesha"
+    assert s.get(api + "/dashboard").status_code == 200
+    assert s.post(api + "/auth/register", json={"username": "other", "password": "secret123"}).status_code == 409

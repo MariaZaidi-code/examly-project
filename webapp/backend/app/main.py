@@ -4,16 +4,22 @@ from starlette.applications import Starlette
 from starlette.background import BackgroundTask
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse, FileResponse, PlainTextResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse, FileResponse, PlainTextResponse, RedirectResponse
 from starlette.routing import Route
-from . import db, services as sv
+from . import db, services as sv, auth
 
 # The single-page frontend lives next to backend/ (webapp/frontend.html) and is served at "/".
 FRONTEND = os.environ.get("EXAMLY_FRONTEND") or os.path.join(os.path.dirname(__file__), "..", "..", "frontend.html")
+LOGIN = os.environ.get("EXAMLY_LOGIN") or os.path.join(os.path.dirname(__file__), "..", "..", "login.html")
 
 async def index(req):
     if not os.path.isfile(FRONTEND): return PlainTextResponse("frontend.html not found at " + os.path.abspath(FRONTEND), status_code=404)
     return FileResponse(FRONTEND, media_type="text/html")
+
+async def login_page(req):
+    if not os.path.isfile(LOGIN): return PlainTextResponse("login.html not found at " + os.path.abspath(LOGIN), status_code=404)
+    return FileResponse(LOGIN, media_type="text/html")
 
 def err(msg, code=400): return JSONResponse({"error": msg}, status_code=code)
 
@@ -72,12 +78,14 @@ async def dashboard(req):
         today_s = db.rows(c, "SELECT x.id,x.topic,s.name subject,x.scheduled_at,x.duration_min,x.status FROM sessions x JOIN subjects s ON s.id=x.subject_id WHERE substr(x.scheduled_at,1,10)=? ORDER BY scheduled_at", (t.isoformat(),))
         last7 = [{"date": d.isoformat(), "weekday": d.strftime("%a"), "minutes": m} for d, m in sv.minutes_by_day(c, 7)]
         weak = sorted(sv.topic_stats(c), key=lambda s: s["proficiency"])
+        due = sv.due_reviews(c)
         hour = dt.datetime.now().hour
         return JSONResponse({
             "greeting": "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening",
             "profile": p, "next_exam": ex, "streak_days": sv.streak(c),
             "today_sessions": today_s, "last7": last7, "last7_total": sum(x["minutes"] for x in last7),
             "weakest": [{**w, "band": sv.band(w["proficiency"])} for w in weak[:3]],
+            "reviews_due": due,
             "recommended": ({"topic": weak[0]["topic"], "subject": weak[0]["subject"], "proficiency": weak[0]["proficiency"], "answers": weak[0]["answers"]} if weak else None),
         })
 
@@ -93,13 +101,16 @@ async def materials(req):
             data = await f.read()
             if not data: return err("empty file")
             ext = f.filename.lower().rsplit(".", 1)[-1]
-            if ext not in ("pdf", "txt", "md"): return err("only pdf, txt, md supported")
+            if ext not in ("pdf", "txt", "md", "pptx", "ppt"): return err("only pdf, txt, md, pptx or ppt supported")
+            old = db.one(c, "SELECT id FROM documents WHERE subject_id=? AND filename=?", (sid, f.filename))
+            if old: c.execute("DELETE FROM documents WHERE id=?", (old["id"],))   # replace, so a re-upload never leaves stale chunks
             c.execute("INSERT INTO documents(subject_id,filename,added_at) VALUES(?,?,?)", (sid, f.filename, db.today().isoformat()))
             did = c.execute("SELECT last_insert_rowid()").fetchone()[0]
             c.commit()
             return JSONResponse({"id": did, "filename": f.filename, "status": "indexing"}, status_code=201,
                                 background=BackgroundTask(sv.index_document, did, f.filename, data))
-        q = "SELECT d.id,d.filename,d.pages,d.status,d.added_at,s.id subject_id,s.name subject FROM documents d JOIN subjects s ON s.id=d.subject_id"
+        q = ("SELECT d.id,d.filename,d.pages,d.status,d.added_at,(SELECT COUNT(*) FROM chunks WHERE document_id=d.id) chunks,"
+             "s.id subject_id,s.name subject FROM documents d JOIN subjects s ON s.id=d.subject_id")
         args = []
         if req.query_params.get("subject_id"): q += " WHERE s.id=?"; args.append(req.query_params["subject_id"])
         return JSONResponse(db.rows(c, q + " ORDER BY d.id DESC", args))
@@ -234,9 +245,124 @@ async def quiz_answer(req):
         if db.one(c, "SELECT 1 FROM answers WHERE question_id=?", (q["id"],)): return err("already answered", 409)
         ok = int(ch == q["correct_index"])
         c.execute("INSERT INTO answers(question_id,chosen,correct,answered_at) VALUES(?,?,?,?)", (q["id"], ch, ok, db.now_iso()))
+        rev = sv.sm2_update(c, q["topic_id"], bool(ok))
         nxt = db.one(c, "SELECT id FROM questions WHERE quiz_id=? AND position>? ORDER BY position LIMIT 1", (q["quiz_id"], q["position"]))
         return JSONResponse({"correct": bool(ok), "correct_index": q["correct_index"], "explanation": q["explanation"],
-                             "source": {"file": q["source_file"], "page": q["source_page"]}, "next_question_id": nxt["id"] if nxt else None})
+                             "source": {"file": q["source_file"], "page": q["source_page"]}, "next_question_id": nxt["id"] if nxt else None,
+                             "review": rev})
+
+# ---- topics / review / flashcards / activity ----
+async def review_due(req):
+    with db.conn() as c:
+        due = sv.due_reviews(c)
+    return JSONResponse({"count": len(due), "due": due})
+
+async def review_grade(req):
+    """Flashcard grading: the student marks a topic's card right or wrong."""
+    d = await body(req)
+    if not isinstance(d.get("correct"), bool): return err("correct must be true or false")
+    with db.conn() as c:
+        t = db.one(c, "SELECT id FROM topics WHERE id=?", (req.path_params["id"],))
+        if not t: return err("not found", 404)
+        rev = sv.sm2_update(c, t["id"], d["correct"])
+    return JSONResponse({"ok": True, "review": rev})
+
+async def flashcards(req):
+    try: limit = max(1, min(int(req.query_params.get("limit", 20)), 50))
+    except ValueError: return err("limit must be an integer")
+    with db.conn() as c:
+        return JSONResponse(sv.flashcards(c, limit))
+
+async def activity(req):
+    """Real activity: recent assistant answers plus what the app has stored (no fabricated tool log)."""
+    with db.conn() as c:
+        msgs = db.rows(c, "SELECT id,role,content,citations,created_at FROM messages ORDER BY id DESC LIMIT 12")
+        for m in msgs: m["citations"] = db.jloads(m["citations"], [])
+        prof = db.one(c, "SELECT name,program,term FROM profile WHERE id=1")
+        exams = db.rows(c, "SELECT e.title,e.date,s.name subject FROM exams e JOIN subjects s ON s.id=e.subject_id ORDER BY date")
+        weak = sorted(sv.topic_stats(c), key=lambda s: s["proficiency"])[:3]
+        for w in weak: w["band"] = sv.band(w["proficiency"])
+        due = sv.due_reviews(c)
+        return JSONResponse({
+            "assistant": {"llm_connected": sv.llm_configured(),
+                          "label": "Language model connected" if sv.llm_configured() else "Extractive mode (no language model configured)"},
+            "recent": list(reversed(msgs)),
+            "counts": {"messages": db.one(c, "SELECT COUNT(*) n FROM messages")["n"],
+                       "documents": db.one(c, "SELECT COUNT(*) n FROM documents")["n"],
+                       "quizzes": db.one(c, "SELECT COUNT(*) n FROM quizzes")["n"],
+                       "answers": db.one(c, "SELECT COUNT(*) n FROM answers")["n"],
+                       "topics": db.one(c, "SELECT COUNT(*) n FROM topics")["n"]},
+            "memory": {"profile": prof, "exams": exams, "weakest": weak,
+                       "reviews": {"due": len(due), "mastered": db.one(c, "SELECT COUNT(*) n FROM reviews WHERE interval_days>=7")["n"]}},
+        })
+
+# ---- auth ----
+def set_session_cookie(resp, token, exp):
+    resp.set_cookie(auth.COOKIE, token, max_age=auth.SESSION_DAYS * 86400, httponly=True, samesite="lax", path="/")
+
+async def auth_status(req):
+    with db.conn() as c:
+        return JSONResponse({"login_required": auth.user_count(c) > 0,
+                             "user": auth.session_user(c, req.cookies.get(auth.COOKIE))})
+
+async def auth_register(req):
+    d = await body(req)
+    with db.conn() as c:
+        if auth.user_count(c) > 0: return err("An account already exists. Please sign in instead.", 409)
+        try:
+            u = auth.create_user(c, d.get("username"), d.get("password") or "")
+        except LookupError as e:
+            return err(str(e), 409)
+        except ValueError as e:
+            return err(str(e))
+        token, exp = auth.create_session(c, u["id"])
+    resp = JSONResponse({"ok": True, "user": u}, status_code=201)
+    set_session_cookie(resp, token, exp)
+    return resp
+
+async def auth_login(req):
+    d = await body(req)
+    with db.conn() as c:
+        u = auth.get_user(c, d.get("username") or "")
+        if not u or not auth.verify(d.get("password") or "", u["salt"], u["pass_hash"]):
+            return err("Wrong username or password.", 401)
+        token, exp = auth.create_session(c, u["id"])
+    resp = JSONResponse({"ok": True, "user": {"id": u["id"], "username": u["username"]}})
+    set_session_cookie(resp, token, exp)
+    return resp
+
+async def auth_logout(req):
+    with db.conn() as c:
+        auth.drop_session(c, req.cookies.get(auth.COOKIE))
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(auth.COOKIE, path="/")
+    return resp
+
+class AuthGate(BaseHTTPMiddleware):
+    """Once an account exists, pages and API require a session; first run stays open for setup."""
+    async def dispatch(self, request, call_next):
+        path = request.url.path
+        if path == "/login" or path.startswith("/api/auth"):
+            return await call_next(request)
+        with db.conn() as c:
+            needed = auth.user_count(c) > 0
+            user = auth.session_user(c, request.cookies.get(auth.COOKIE))
+        if needed and not user:
+            if path.startswith("/api"): return JSONResponse({"error": "Please sign in."}, status_code=401)
+            return RedirectResponse("/login", status_code=303)
+        request.state.user = user
+        return await call_next(request)
+
+async def topic_update(req):
+    """Set the topic group (heatmap column). Blank or null clears it, so the topic name is used."""
+    d = await body(req)
+    if "area" not in d: return err("area required")
+    area = (d.get("area") or "").strip() or None
+    if area and len(area) > 40: return err("area must be 40 characters or fewer")
+    with db.conn() as c:
+        if not db.one(c, "SELECT 1 FROM topics WHERE id=?", (req.path_params["id"],)): return err("not found", 404)
+        c.execute("UPDATE topics SET area=? WHERE id=?", (area, req.path_params["id"]))
+    return JSONResponse({"id": req.path_params["id"], "area": area})
 
 # ---- weak topics / analytics ----
 async def weak_topics(req):
@@ -268,6 +394,11 @@ async def analytics(req):
 
 routes = [
     Route("/", index),
+    Route("/login", login_page),
+    Route("/api/auth/status", auth_status),
+    Route("/api/auth/register", auth_register, methods=["POST"]),
+    Route("/api/auth/login", auth_login, methods=["POST"]),
+    Route("/api/auth/logout", auth_logout, methods=["POST"]),
     Route("/api/profile", profile, methods=["GET", "PUT"]),
     Route("/api/subjects", subjects, methods=["GET", "POST"]),
     Route("/api/exams", exams, methods=["GET", "POST"]),
@@ -288,6 +419,11 @@ routes = [
     Route("/api/quizzes", quiz_create, methods=["POST"]),
     Route("/api/quizzes/{id:int}", quiz_get),
     Route("/api/quizzes/{id:int}/questions/{qid:int}/answer", quiz_answer, methods=["POST"]),
+    Route("/api/topics/{id:int}", topic_update, methods=["PUT"]),
+    Route("/api/review/due", review_due),
+    Route("/api/review/{id:int}", review_grade, methods=["POST"]),
+    Route("/api/flashcards", flashcards),
+    Route("/api/activity", activity),
     Route("/api/weak-topics", weak_topics),
     Route("/api/analytics", analytics),
 ]
@@ -300,4 +436,5 @@ async def lifespan(_app):
     yield
 
 app = Starlette(routes=routes, lifespan=lifespan,
-                middleware=[Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])])
+                middleware=[Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]),
+                            Middleware(AuthGate)])

@@ -33,7 +33,13 @@ test evidence, limitations above. Do not claim the offline policy is an LLM.
 
 ## Frontend/backend wiring (added)
 - [x] webapp/frontend.html rewritten: all 7 screens fetch from /api (profile, exam and upload dialogs, chat with citations, planner propose/confirm/discard, quizzes, weak topics, analytics). Backend serves it at "/".
-- Verified in headless Chromium against the REAL app/main.py handlers run behind a Flask shim (starlette could not be installed offline). NOT yet run under real uvicorn: do `uvicorn app.main:app` and click through once.
-- Known behaviour: quiz may have fewer than the requested questions on short notes (backend cloze generator). "Practice now" passes the topic as a label only; it does not filter content.
+- Verified end-to-end against real uvicorn: `/` serves frontend.html, and the API flow works (upload -> indexed -> grounded chat with citations -> quiz -> weak topics -> planner propose/confirm -> session done -> analytics). Backend tests: 9/9 pass.
+- [x] Topic groups: `PUT /api/topics/{id}` plus a "Group" button on My Weak Topics lets the student set heatmap columns (previously seed-only).
+- [x] Login: single-account first-run setup + sign-in page (`webapp/login.html`, `/login`), PBKDF2 hashes, SQLite session cookies, log out in the sidebar. Once an account exists the app and `/api` require a session.
+- [x] Ingestion: six sample Database Systems notes in `webapp/backend/sample_materials/database_systems/`, `ingest_sample.py` verifier, re-upload replaces a document, chunks reset on re-index, interrupted `indexing` documents become `failed` at startup, and `materials` now reports chunk counts.
+- [x] Frontend replaced with the downloaded `examly_preview.html` design (purple dashboard, 9 screens: adds Flashcards and Agent Activity) and wired to /api. Flashcards use generated questions + SM-2 (`GET /api/flashcards`, `POST /api/review/{id}`); Agent Activity shows real assistant history and stored study data (`GET /api/activity`), not a fabricated MCP log.
+- Known behaviour: quiz may have fewer than the requested questions on short notes (backend cloze generator). "Practice now" now draws questions from notes/sentences that mention the topic and falls back to the whole subject when the topic is absent.
+- [x] Spaced repetition (simplified SM-2, inspired by Anki/FSRS and Mind Mentor): each quiz answer schedules the topic's next review (1 -> 3 -> 7 days, then interval x ease; wrong resets to tomorrow). `GET /api/review/due` and `dashboard.reviews_due` feed a "Reviews due today" card on Overview.
+- [x] Topic-scoped quizzes (inspired by PrepPilot/NoteBotLM): `topic` on POST /quizzes filters both chunks and sentences, so the existing "Practice now" button actually targets the weak topic.
 - Not used: DOC-20261103-WA0009.zip (separate Streamlit "examination_agent"); ask the student if it should be merged.
 - Student TODO still open: real-LLM demo transcript, name/reg no. in report, instructor scenario pack.

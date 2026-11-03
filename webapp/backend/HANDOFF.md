@@ -55,11 +55,13 @@ documented in README.md without updating the README and tests.
 - [x] app/services (retrieval, quiz, planner, analytics)
 - [x] app/main.py routes
 - [x] seed.py
-- [x] tests pass (8/8)
+- [x] tests pass (9/9)
 - [x] README.md
+- [x] spaced repetition: `reviews` table, simplified SM-2 on each quiz answer, `GET /api/review/due`, `dashboard.reviews_due`, Overview "Reviews due today" card
+- [x] topic-scoped quiz generation: `topic` filters chunks and sentences ("Practice now" now actually focuses)
+- [x] verified against real uvicorn: `/` serves the frontend; full flow works (profile -> subject/exam -> upload -> indexed -> grounded chat with citations -> quiz -> weak topics -> topic group -> planner propose/confirm -> session done -> analytics), no server errors
 
 ## Remaining ideas (not done)
-- Add a PUT /api/topics/{id} to set `area` (heatmap columns) from the UI.
 - LLM-generated quiz questions (currently heuristic cloze) and topic extraction.
 - Serve the frontend and wire its hardcoded sample data to these endpoints (fetch calls).
 - Auth if multi-user; port to FastAPI once pip works.

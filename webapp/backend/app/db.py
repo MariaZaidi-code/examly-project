@@ -27,8 +27,15 @@ CREATE TABLE IF NOT EXISTS questions(id INTEGER PRIMARY KEY, quiz_id INTEGER REF
   source_file TEXT, source_page INTEGER, topic_id INTEGER REFERENCES topics(id));
 CREATE TABLE IF NOT EXISTS answers(id INTEGER PRIMARY KEY, question_id INTEGER UNIQUE REFERENCES questions(id) ON DELETE CASCADE,
   chosen INTEGER NOT NULL, correct INTEGER NOT NULL, answered_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, topic_id INTEGER UNIQUE REFERENCES topics(id) ON DELETE CASCADE,
+  ease REAL NOT NULL DEFAULT 2.5, interval_days INTEGER NOT NULL DEFAULT 0, reps INTEGER NOT NULL DEFAULT 0,
+  lapses INTEGER NOT NULL DEFAULT 0, due TEXT, last_reviewed TEXT);
 CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, role TEXT NOT NULL, subject_id INTEGER, content TEXT NOT NULL,
   citations TEXT DEFAULT '[]', created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, pass_hash TEXT NOT NULL,
+  salt TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS auth_sessions(token TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL, expires_at TEXT NOT NULL);
 """
 
 def today():
@@ -47,6 +54,8 @@ def init():
     with conn() as c:
         c.executescript(SCHEMA)
         c.execute("INSERT OR IGNORE INTO profile(id,name,program,term) VALUES(1,'','','')")
+        # Files are not stored, so anything still 'indexing' at boot was interrupted by a restart.
+        c.execute("UPDATE documents SET status='failed' WHERE status='indexing'")
 
 def rows(c, sql, args=()):
     return [dict(r) for r in c.execute(sql, args).fetchall()]

@@ -2,5 +2,6 @@ starlette
 uvicorn
 python-multipart
 pypdf
+python-pptx
 requests
 pytest
