@@ -3,6 +3,9 @@ import io, os, re, json, random, math, collections, datetime as dt
 from . import db, config, llm
 
 STOP = set("the a an and or of to in on for with is are was were be been it its as at by from that this these those which who whom not no but if then so than into onto over under can may must should will would only each every other such their there they them we you your our he she his her also more most any all one two".split())
+# extra words filtered from *questions* only (not from indexed text), so
+# "What is a primary key?" scores on {primary, key} and the exact phrase "primary key"
+QSTOP = STOP | set("what how why when where explain define defines give me my i please does do did tell about whose whom anyone briefly simply kind sort".split())
 LEVEL_HINT = {"Basic": "Keep it very simple.", "Standard": "", "Advanced": "Go deep and be precise."}
 
 def tok(s):
@@ -121,7 +124,7 @@ def split_chunks(text, target=600):
 
 # ---------- retrieval ----------
 def retrieve(c, query, subject_id=None, document_ids=None, k=4):
-    q = set(tok(query))
+    q = set(w for w in tok(query) if w not in QSTOP)
     if not q: return []
     sql = "SELECT ch.id, ch.text, ch.page, d.id doc_id, d.filename FROM chunks ch JOIN documents d ON d.id=ch.document_id WHERE d.status='indexed'"
     args = []
@@ -130,11 +133,22 @@ def retrieve(c, query, subject_id=None, document_ids=None, k=4):
     cands = db.rows(c, sql, args)
     n = max(len(cands), 1)
     df = collections.Counter(w for r in cands for w in set(tok(r["text"])))
+    phrase = " ".join(w for w in tok(query) if w not in QSTOP)   # question without filler words, in order
     scored = []
     for r in cands:
         words = collections.Counter(tok(r["text"]))
-        s = sum((1 + math.log(words[w])) * math.log(1 + n / df[w]) for w in q if words[w])
-        if s > 0: scored.append((s / math.sqrt(len(r["text"]) / 200 + 1), r))
+        matched = [w for w in q if words[w]]
+        if not matched: continue
+        s = sum((1 + math.log(words[w])) * math.log(1 + n / df[w]) for w in matched)
+        if s <= 0: continue
+        # A chunk that covers every query term should beat a chunk that merely
+        # repeats one common word (e.g. "key" on every slide of an AES deck).
+        s *= 1 + 1.5 * (len(matched) / len(q))
+        if len(q) > 1 and len(matched) == len(q):
+            flat = re.sub(r"\s+", " ", r["text"].lower())
+            if phrase in flat:                  # the exact phrase ("primary key") is stronger still
+                s *= 1.6
+        scored.append((s / math.sqrt(len(r["text"]) / 200 + 1), r))
     scored.sort(key=lambda x: -x[0])
     return [r for _, r in scored[:k]]
 
@@ -283,13 +297,24 @@ def sm2_update(c, topic_id, correct, day=None):
               (topic_id, ease, interval, reps, lapses, due, day.isoformat()))
     return {"topic_id": topic_id, "interval_days": interval, "due": due, "reps": reps, "lapses": lapses, "ease": round(ease, 2)}
 
-def flashcards(c, limit=20):
-    """Cards are the quiz questions already built from the student's notes; a card is due when its topic's review is due."""
+def flashcards(c, limit=20, document_id=None):
+    """Cards are the quiz questions already built from the student's notes; a card is due when its topic's review is due.
+
+    With ``document_id``, only cards whose source file is that document are
+    returned (``scope`` names the file). Returns None for an unknown document.
+    """
     today = db.today().isoformat()
+    where, args, scope = "", [], None
+    if document_id is not None:
+        doc = db.one(c, "SELECT id, filename, subject_id FROM documents WHERE id=?", (document_id,))
+        if not doc: return None
+        where = " AND q.source_file=?"
+        args.append(doc["filename"])
+        scope = {"document_id": doc["id"], "filename": doc["filename"], "subject_id": doc["subject_id"]}
     rows = db.rows(c, """SELECT q.id question_id, q.prompt, q.options, q.correct_index, q.explanation, q.source_file, q.source_page,
                               t.id topic_id, t.name topic, s.id subject_id, s.name subject, r.due, r.interval_days, r.reps
                        FROM questions q JOIN topics t ON t.id=q.topic_id JOIN subjects s ON s.id=t.subject_id
-                       LEFT JOIN reviews r ON r.topic_id=t.id ORDER BY q.id DESC""")
+                       LEFT JOIN reviews r ON r.topic_id=t.id WHERE 1=1""" + where + " ORDER BY q.id DESC", args)
     cards = []
     for q in rows:
         if q["due"] and q["due"] > today: continue
@@ -301,7 +326,7 @@ def flashcards(c, limit=20):
                       "source": {"file": q["source_file"], "page": q["source_page"]},
                       "due": q["due"], "interval_days": q["interval_days"], "reps": q["reps"]})
     return {"total": len(rows), "due_count": len(cards), "mastered": db.one(c, "SELECT COUNT(*) n FROM reviews WHERE interval_days>=7")["n"],
-            "cards": cards[:limit]}
+            "cards": cards[:limit], "scope": scope}
 
 def due_reviews(c, day=None):
     day = day or db.today()

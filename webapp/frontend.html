@@ -18,7 +18,7 @@ nav button:focus-visible{outline:2px solid var(--acc)}
 .sc{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:10px}.sc small{color:var(--ink3);font-size:12px;display:block}.sc b{font-weight:500;font-size:13.5px}
 .prof{margin-top:auto;display:flex;gap:10px;align-items:center;padding:12px 8px 0;border-top:1px solid var(--line)}
 .av{width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--acc);display:grid;place-items:center;font-size:12px;font-weight:600}
-main{padding:24px 32px 48px;max-width:1100px;width:100%}
+main{padding:24px 32px 24px;max-width:1100px;width:100%}
 .ph{padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 h1{font-size:22px;margin:0;font-weight:600;letter-spacing:-.01em}.sub{color:var(--ink3);margin-top:2px}
 .pill{font-size:11.5px;padding:1px 8px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2);background:#fff}.pill.ok{color:var(--ok);background:var(--okbg);border-color:#BFD6C5}.pill.bad{color:var(--bad);background:#F8E9E9;border-color:#E7C2C2}.pill.warn{color:var(--warn);background:var(--warnbg);border-color:#EBD3A8}
@@ -42,7 +42,7 @@ details{border:1px solid var(--line);border-radius:6px;margin:6px 0;font-size:13
 .cal .c{min-height:76px;padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12px;color:var(--ink3)}.cal .c:nth-child(7n){border-right:0}
 .chip{display:block;font-size:11.5px;padding:2px 6px;margin-top:3px;border-radius:4px;background:var(--soft);color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chip.x{background:var(--warnbg);color:var(--warn);font-weight:500}.chip.d{background:var(--bg);color:var(--ink3);text-decoration:line-through}
 .hm{display:grid;grid-template-columns:130px repeat(4,1fr);gap:2px;font-size:12px}.hm div{padding:10px 8px;border-radius:3px}.hm .l{color:var(--ink2);padding-left:0}.hm .hd{color:var(--ink3);padding:0 8px 4px}
-.note{font-size:12px;color:var(--ink3);margin-top:16px}
+.note{font-size:12px;color:var(--ink3);margin:8px 0 0}
 .view{display:none}.view.on{display:block;animation:fi .24s}
 @media(max-width:820px){.app{grid-template-columns:1fr}aside{flex-direction:row;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}.brand,.sc,.prof{display:none}nav{display:flex;gap:2px}nav button{white-space:nowrap;width:auto}main{padding:16px}.g2,.g3{grid-template-columns:1fr}.cal .c{min-height:52px;padding:4px}.chip{font-size:10px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -51,6 +51,9 @@ details{border:1px solid var(--line);border-radius:6px;margin:6px 0;font-size:13
 body{background:var(--bg)}main{max-width:1280px}
 .mark{background:linear-gradient(135deg,#8B77F5,#5B47D6);border-radius:8px;box-shadow:0 4px 12px -2px rgba(108,86,232,.5)}
 aside{background:#fff;border:0;margin:12px 0 12px 12px;border-radius:18px;box-shadow:0 2px 16px rgba(70,60,140,.06);min-height:calc(100vh - 24px)}
+/* sidebar never stretches the page: cap at the viewport and scroll inside,
+   and keep it pinned while the main content scrolls */
+@media(min-width:821px){aside{position:sticky;top:0;align-self:start;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#CFC8F5 transparent}aside::-webkit-scrollbar{width:6px}aside::-webkit-scrollbar-thumb{background:#D9D4F5;border-radius:6px}}
 nav button{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;position:relative}
 nav button:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line2);transition:all .2s}
 nav button:hover{background:#F6F5FD;transform:translateX(2px)}nav button:hover:before{background:var(--acc)}
@@ -228,6 +231,16 @@ dialog h3{margin:0 0 4px;font-size:16px}
 .bell .bc[hidden]{display:none}
 .cf{position:fixed;top:-16px;width:9px;height:15px;border-radius:2px;z-index:80;pointer-events:none;animation:cfall linear forwards}
 @keyframes cfall{to{transform:translate3d(var(--dx),102vh,0) rotate(var(--rot));opacity:.85}}
+/* --- assistant chat: fixed scrollable log so the input stays visible --- */
+#chatLog{overflow-y:auto;overscroll-behavior:contain;min-height:260px;max-height:calc(100vh - 335px);padding:4px 8px 4px 0;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#CFC8F5 transparent}
+#chatLog::-webkit-scrollbar{width:8px}
+#chatLog::-webkit-scrollbar-thumb{background:#CFC8F5;border-radius:8px}
+#chatLog::-webkit-scrollbar-track{background:transparent}
+#chatLog .msg:last-child{padding-bottom:4px}
+@media(prefers-reduced-motion:reduce){#chatLog{scroll-behavior:auto}}
+.msg .ah{font-weight:700;font-size:15.5px;color:var(--ink);margin:12px 0 4px}
+.msg .ah:first-child{margin-top:0}
+.msg code{background:#F2F0FC;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:13px;color:var(--acc)}
 .top .btn.p{white-space:nowrap}
 </style>
 <div class="app">
@@ -325,6 +338,13 @@ dialog h3{margin:0 0 4px;font-size:16px}
 
 <section class="view" id="v7">
  <div class="ph"><div><h1>Flashcards</h1><div class="sub">Practice questions from your notes, scheduled with spaced repetition.</div></div></div>
+ <div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Deck</span><span id="fcScopeN">all documents</span></div>
+  <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+   <div style="flex:1;min-width:220px"><label class="lbl" for="fcDoc">Flashcards from</label><select class="in" id="fcDoc"><option value="">All documents</option></select></div>
+   <div><button class="btn p" id="fcBuild" data-act="fcBuild" style="display:none">Build cards from this file</button></div>
+  </div>
+  <div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:8px">Pick one document to practise only its cards &mdash; or build fresh cards straight from that file.</div>
+ </div>
  <div class="panel" style="margin-bottom:12px"><div class="stats" id="fcStats"></div></div>
  <div class="bar" style="width:100%;margin-bottom:6px"><i id="fcBar" style="width:0%"></i></div>
  <div class="s" style="font-size:12px;color:var(--ink3);margin-bottom:10px" id="fcn"></div>
@@ -349,7 +369,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
 const API=(window.EXAMLY_API||(location.protocol==="file:"?"http://127.0.0.1:8000/api":"/api"));
 const $=(s,r)=>(r||document).querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S={view:0,subjects:[],docs:[],msgs:[],quiz:null,proposal:null,month:null,prefill:null,prefillMsg:"",uncheck:new Set(),pollT:null,initial:"?",flash:null,ovSubs:[],ovFilter:"all",user:null,profile:null,dragFile:null};
+const S={view:0,subjects:[],docs:[],msgs:[],quiz:null,proposal:null,month:null,prefill:null,prefillMsg:"",uncheck:new Set(),pollT:null,initial:"?",flash:null,ovSubs:[],ovFilter:"all",user:null,profile:null,dragFile:null,fcDoc:"",fdocs:[]};
 const reduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* The signed-in account's name: profile name first, then the username, so the
    sidebar, greeting and avatars always show *your* name after login. */
@@ -505,17 +525,37 @@ async function loadOverview(){
 }
 
 /* ---------- 1 assistant ---------- */
+/* Markdown-lite: LLM answers may carry ## headings, **bold** and `code`.
+   Render them properly instead of showing raw markers. */
+function mdText(t){
+ return t.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")
+         .replace(/`([^`]+)`/g,"<code>$1</code>")
+         .replace(/\[(\d+)\]/g,"<b>[$1]</b>");
+}
 function renderMsg(m){
  if(m.role==="user")return '<div class="msg u"><div class="a">'+esc(initial())+'</div><div class="m"><p>'+esc(m.content).replace(/\n/g,"<br>")+"</p></div></div>";
  const cites=(m.citations||[]).map(c=>"<details><summary>["+c.n+"] "+esc(c.filename)+", page "+c.page+"</summary><div>\""+esc(c.quote)+"\"</div></details>").join("");
- const meta=m.mode==="extractive"?'<div class="meta">Extractive answer: the best matching sentences from your notes (no language model configured).</div>':"";
- return '<div class="msg'+(m.grounded===false?" nf":"")+'"><div class="a">E</div><div class="m">'+esc(m.content).split(/\n{2,}/).map(p=>"<p>"+p.replace(/\n/g,"<br>").replace(/\[(\d+)\]/g,"<b>[$1]</b>")+"</p>").join("")+cites+meta+"</div></div>";
+ const meta=m.mode==="extractive"
+   ?(S.llmReady?'<div class="meta">Grounded fallback: the language model was unavailable just now, so this answer is quoted straight from your notes.</div>'
+               :'<div class="meta">Extractive answer: the best matching sentences from your notes (no language model configured).</div>')
+   :"";
+ const body=esc(m.content).split(/\n{2,}/).map(block=>block.split("\n").map(line=>{
+   const h=/^#{1,6}\s+(.*)$/.exec(line);
+   if(h)return '<p class="ah">'+mdText(h[1]).replace(/\s*#+\s*$/,"")+"</p>";
+   return "<p>"+mdText(line.replace(/^[-*]\s+/,"\u2022 "))+"</p>";
+ }).join("")).join("");
+ return '<div class="msg'+(m.grounded===false?" nf":"")+'"><div class="a">E</div><div class="m">'+body+cites+meta+"</div></div>";
 }
-function paintChat(){const log=$("#chatLog");log.innerHTML=S.msgs.length?S.msgs.map(renderMsg).join(""):'<div class="empty">Ask a question. Answers come only from the notes you uploaded, with citations.</div>';}
+function paintChat(){
+ const log=$("#chatLog");
+ log.innerHTML=S.msgs.length?S.msgs.map(renderMsg).join(""):'<div class="empty">Ask a question. Answers come only from the notes you uploaded, with citations.</div>';
+ log.scrollTop=log.scrollHeight;   // keep the newest exchange in view inside the scrollable log
+}
 function paintDocs(){const sid=$("#aSubject").value;const docs=S.docs.filter(d=>d.status==="indexed"&&(!sid||String(d.subject_id)===sid));$("#aDocN").textContent=plural(docs.length,"file");$("#aDocs").innerHTML=docs.length?docs.map(d=>'<label class="row" style="cursor:pointer;padding:8px 0"><input type="checkbox" data-doc="'+d.id+'"'+(S.uncheck.has(d.id)?"":" checked")+'><div class="m"><div class="t">'+esc(d.filename)+'</div><div class="s">'+plural(d.pages||0,"page")+"</div></div></label>").join(""):'<div class="empty">No indexed documents yet. Upload some under Study Materials.</div>';}
 async function loadAssistant(){
  const [st,docs,hist]=await Promise.all([api("/assistant/status"),api("/materials"),api("/assistant/history"),refreshSubjects(),refreshDash()]);
  const pill=$("#aStatus");pill.textContent=st.label;pill.className="pill "+(st.llm_connected?"ok":"warn");
+ S.llmReady=!!st.llm_connected;
  const cur=$("#aSubject").value;$("#aSubject").innerHTML=subjOptions(cur,true);
  S.docs=docs;
  S.msgs=hist.map(m=>({role:m.role,content:m.content,citations:m.citations,grounded:m.role==="assistant"?!((m.citations||[]).length):undefined}));
@@ -661,7 +701,25 @@ async function loadAnalytics(){
 }
 
 /* ---------- 7 flashcards ---------- */
-async function loadFlashcards(){const f=await api("/flashcards");S.flash={data:f,i:0,flipped:false};paintFlashStats();paintFlash();}
+async function loadFlashcards(){
+ const [f,docs]=await Promise.all([
+   api("/flashcards"+(S.fcDoc?"?document_id="+encodeURIComponent(S.fcDoc):"")),
+   S.fdocs.length?Promise.resolve(S.fdocs):api("/materials")]);
+ S.fdocs=docs.filter(d=>d.status==="indexed");
+ paintFcDocs();
+ S.flash={data:f,i:0,flipped:false};paintFlashStats();paintFlash();paintFcScope();
+}
+function paintFcDocs(){
+ const sel=$("#fcDoc");if(!sel)return;
+ if(S.fcDoc&&!S.fdocs.some(d=>String(d.id)===String(S.fcDoc)))S.fcDoc="";   // selected file was deleted
+ sel.innerHTML='<option value="">All documents</option>'+S.fdocs.map(d=>'<option value="'+d.id+'">'+esc(d.filename)+" \u00b7 "+esc(d.subject||"")+"</option>").join("");
+ sel.value=S.fcDoc;
+ const b=$("#fcBuild");if(b)b.style.display=S.fcDoc?"":"none";
+}
+function paintFcScope(){
+ const z=S.flash,scope=z&&z.data&&z.data.scope;
+ const n=$("#fcScopeN");if(n)n.textContent=scope?scope.filename:"all documents";
+}
 function paintFlashStats(){
  const f=S.flash?S.flash.data:{due_count:0,total:0,mastered:0};
  const item=(v,l)=>'<div><div><b>'+v+"</b><small>"+l+"</small></div></div>";
@@ -670,15 +728,26 @@ function paintFlashStats(){
 }
 function paintFlash(){
  const z=S.flash;if(!z)return;
- const cards=z.data.cards||[],c=cards[z.i],fc=$("#fc");
- if(!c){fc.className="fc";$("#fs").textContent="All caught up";$("#ft").textContent="No cards are due right now. Take a quiz to build more cards.";$("#fsb").style.display="none";$("#fg").style.display=$("#fa").style.display="none";$("#fcn").textContent="0 cards due";return;}
+ const cards=z.data.cards||[],c=cards[z.i],fc=$("#fc"),scoped=!!z.data.scope;
+ if(!c){
+  fc.className="fc";
+  $("#fs").textContent=z.data.total===0?(scoped?"No cards from this file yet":"No flashcards yet"):"All caught up";
+  $("#ft").textContent=z.data.total===0
+   ?(scoped?"This document has no flashcards yet. Press \u201cBuild cards from this file\u201d and they will appear here."
+          :"Take a quiz to build cards from your notes.")
+   :(scoped?"No cards are due for this document right now.":"No cards are due right now. Take a quiz to build more cards.");
+  $("#fsb").style.display="none";$("#fg").style.display=$("#fa").style.display=$("#fs2").style.display="none";
+  $("#fcn").textContent="0 cards due"+(scoped?" from "+z.data.scope.filename:"");
+  return;
+ }
  const flipped=z.flipped;
  fc.className="fc"+(flipped?" back":"");
  $("#fs").textContent=c.subject+" \u00b7 "+(flipped?"Answer":"Question")+" "+(z.i+1)+" of "+cards.length;
  $("#ft").textContent=flipped?c.back:c.front;
  $("#fsb").style.display=flipped?"none":"";
+ $("#fs2").style.display="";
  $("#fg").style.display=$("#fa").style.display=flipped?"":"none";
- $("#fcn").textContent=(cards.length-z.i)+" cards left in this batch"+(c.source&&c.source.file?", source "+c.source.file:"");
+ $("#fcn").textContent=(cards.length-z.i)+" cards left in this batch"+(scoped?" from "+z.data.scope.filename:"")+(c.source&&c.source.file?", source "+c.source.file:"");
 }
 async function gradeCard(correct){
  const z=S.flash;const c=z&&z.data.cards[z.i];if(!c)return;
@@ -727,6 +796,17 @@ const ACTIONS={
  fcGot:()=>gradeCard(true).catch(fail),
  fcAgain:()=>gradeCard(false).catch(fail),
  fcNext:()=>{if(S.flash&&S.flash.data.cards.length){S.flash.i=(S.flash.i+1)%S.flash.data.cards.length;S.flash.flipped=false;paintFlash();}},
+ fcBuild:async()=>{
+  const id=+S.fcDoc;if(!id){toast("Choose a document first.",true);return;}
+  const doc=(S.fdocs||[]).find(d=>d.id===id);
+  if(!doc){toast("That document is no longer in your library.",true);return;}
+  const btn=$("#fcBuild");btn.disabled=true;
+  try{
+   const q=await send("/quizzes","POST",{subject_id:doc.subject_id,count:6,document_ids:[doc.id]});
+   toast("Built "+(q.questions||[]).length+" flashcards from "+doc.filename);
+   await loadFlashcards();
+  }finally{btn.disabled=false;}
+ },
  focusToggle:focusToggle,
  logout:async()=>{try{await send("/auth/logout","POST",{});}catch(e){}location.href="/login";}
 };
@@ -742,6 +822,7 @@ async function toggleSession(el){const done=el.classList.contains("on");await se
 document.addEventListener("change",e=>{
  if(e.target.id==="aSubject")paintDocs();
  if(e.target.id==="mFile"){S.dragFile=null;paintDz();}
+ if(e.target.id==="fcDoc"){S.fcDoc=e.target.value;loadFlashcards().catch(fail);return;}
  if(e.target.dataset&&e.target.dataset.doc){const id=+e.target.dataset.doc;e.target.checked?S.uncheck.delete(id):S.uncheck.add(id);}
 });
 document.addEventListener("keydown",e=>{

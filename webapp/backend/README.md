@@ -42,7 +42,7 @@ The app starts empty. Files: pdf, txt, md, pptx, ppt (25 MB max).
 | POST /planner/proposals/{id}/confirm, DELETE .../{id} | confirm saves sessions |
 | PATCH/DELETE /sessions/{id} | status planned/done/skipped; done logs study minutes |
 | POST /study-log | {minutes, day?, subject_id?} |
-| POST /quizzes, GET /quizzes/{id} | {subject_id, count, topic?} cloze MCQs; `topic` focuses generation on sentences that mention it (falls back to the whole subject); answers hidden until answered |
+| POST /quizzes, GET /quizzes/{id} | {subject_id, count, topic?, document_ids?} cloze MCQs; `topic` focuses generation on sentences that mention it (falls back to the whole subject); `document_ids` restricts generation to those files (used by Flashcards "Build cards from this file"); answers hidden until answered |
 | POST /quizzes/{id}/questions/{qid}/answer | {chosen} -> correct, explanation, source, next_question_id |
 | GET /weak-topics | heatmap{columns,rows} + ranked[{proficiency, band, last_correct/last_total, answers}] |
 | PUT /topics/{id} | sets the topic group used as a heatmap column (`area`); blank clears it |
@@ -50,7 +50,7 @@ The app starts empty. Files: pdf, txt, md, pptx, ppt (25 MB max).
 | POST /auth/register, /auth/login, /auth/logout | single-account setup, sign in, sign out (HttpOnly session cookie) |
 | GET /review/due | spaced-repetition queue: topics due today with {due, interval_days, reps, lapses, proficiency, band} |
 | POST /review/{id} | grades a flashcard review for that topic: {correct: bool} -> updated schedule |
-| GET /flashcards?limit=20 | cards built from generated questions, grouped by topic review due date; {total, due_count, mastered, cards[]} |
+| GET /flashcards?limit=20&document_id= | cards built from generated questions, grouped by topic review due date; {total, due_count, mastered, cards[], scope}; `document_id` restricts the deck to one file (404 if unknown) |
 | GET /activity | real assistant history plus stored profile, exams, weakest topics and review counts |
 | GET /analytics | study_hours_30d, active_days_30d, current_streak, quiz_trend, subject_comparison, daily_minutes |
 

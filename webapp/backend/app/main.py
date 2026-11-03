@@ -280,8 +280,14 @@ async def review_grade(req):
 async def flashcards(req):
     try: limit = max(1, min(int(req.query_params.get("limit", 20)), 50))
     except ValueError: return err("limit must be an integer")
+    doc_id = None
+    if (req.query_params.get("document_id") or "").strip():
+        try: doc_id = int(req.query_params["document_id"])
+        except ValueError: return err("document_id must be an integer")
     with db.conn() as c:
-        return JSONResponse(sv.flashcards(c, limit))
+        out = sv.flashcards(c, limit, doc_id)
+    if out is None: return err("document not found", 404)
+    return JSONResponse(out)
 
 async def activity(req):
     """Real activity: recent assistant answers plus what the app has stored (no fabricated tool log)."""

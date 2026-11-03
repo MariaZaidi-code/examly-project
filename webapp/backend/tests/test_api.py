@@ -62,6 +62,25 @@ def test_assistant_grounded_and_refuses(api):
     r = requests.post(api + "/assistant/chat", json={"message": "quantum chromodynamics gluon", "subject_id": S["sid"]}).json()
     assert r["grounded"] is False and r["citations"] == []
     assert requests.post(api + "/assistant/chat", json={"message": " "}).status_code == 400
+
+def test_retrieval_prefers_full_query_coverage(api):
+    from app import db as adb, services as sv
+    # a decoy deck that repeats one query word ("key") far more often than the
+    # real answer does - ranking must favour covering the whole question
+    decoy = ("AES encryption expands a secret key into round key values; each round key masks the state. " * 12)
+    r = requests.post(api + "/materials", files={"file": ("aes_keys.txt", decoy.encode())}, data={"subject_id": S["sid"]})
+    assert r.status_code == 201
+    for _ in range(40):
+        m = requests.get(api + "/materials").json()
+        if all(x["status"] != "indexing" for x in m): break
+        time.sleep(0.1)
+    try:
+        with adb.conn() as c:
+            hits = sv.retrieve(c, "What is a primary key?")
+        assert hits and hits[0]["filename"] == "dbms_normalization.txt"
+    finally:
+        did = next(x["id"] for x in m if x["filename"] == "aes_keys.txt")
+        requests.delete(f"{api}/materials/{did}")                     # leave the workspace as we found it
     assert len(requests.get(api + "/assistant/history").json()) == 4
     assert requests.get(api + "/assistant/status").json()["llm_connected"] is False
 
@@ -161,6 +180,32 @@ def test_flashcards_and_review_grading(api):
     assert requests.get(api + "/flashcards").json()["due_count"] < f["due_count"]   # topic rescheduled, cards no longer due
     assert requests.get(api + "/flashcards?limit=1").json()["cards"][0:1] and len(requests.get(api + "/flashcards?limit=1").json()["cards"]) == 1
     assert requests.get(api + "/flashcards?limit=x").status_code == 400
+
+def test_flashcards_scoped_to_selected_document(api):
+    # a second document appears in the selector; decks can be scoped to it
+    text = ("A left join preserves every record from the left table even when no matching record exists on the right. "
+            "An inner join returns only those records with matching values in both relations. "
+            "Database systems optimise join operations using specialised indexes and hash tables. ") * 6
+    r = requests.post(api + "/materials", files={"file": ("joins_cheatsheet.txt", text.encode())}, data={"subject_id": S["sid"]})
+    assert r.status_code == 201
+    doc2 = r.json()["id"]
+    try:
+        for _ in range(40):
+            m = requests.get(api + "/materials").json()
+            if all(x["status"] != "indexing" for x in m): break
+            time.sleep(0.1)
+        assert requests.get(api + "/flashcards").json()["scope"] is None              # default deck is unscoped
+        assert requests.get(api + "/flashcards", params={"document_id": doc2}).json()["total"] == 0   # no cards from this file yet
+        q = requests.post(api + "/quizzes", json={"subject_id": S["sid"], "count": 4, "document_ids": [doc2]})
+        assert q.status_code == 201                                                   # build cards straight from it
+        f = requests.get(api + "/flashcards", params={"document_id": doc2}).json()
+        assert f["scope"] == {"document_id": doc2, "filename": "joins_cheatsheet.txt", "subject_id": S["sid"]}
+        assert f["total"] >= 1 and f["due_count"] >= 1 and f["cards"]
+        assert all(c["source"]["file"] == "joins_cheatsheet.txt" for c in f["cards"]) # nothing leaks in from other files
+        assert requests.get(api + "/flashcards", params={"document_id": 99999}).status_code == 404
+        assert requests.get(api + "/flashcards?document_id=x").status_code == 400
+    finally:
+        requests.delete(f"{api}/materials/{doc2}")                                    # restore: only the original doc remains
 
 def test_activity_returns_real_data(api):
     a = requests.get(api + "/activity").json()
