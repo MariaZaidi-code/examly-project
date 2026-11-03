@@ -596,37 +596,127 @@ summary{padding:10px 14px;font-weight:500}
  <div id="anBox"></div>
 </section>
 
-<section class="view" id="v7">
- <div class="ph"><div><h1>Flashcards</h1><div class="sub">Spaced repetition from your notes. Rate honestly — the schedule adapts.</div></div><span class="pill" id="fcModePill">Study mode</span></div>
- <div class="panel fc-deck-panel" style="margin-bottom:12px">
-  <div class="fc-deck-row">
-   <div class="fc-deck-field"><label class="lbl" for="fcDoc">Deck</label><select class="in" id="fcDoc"><option value="">All documents</option></select></div>
-   <div class="fc-deck-field"><label class="lbl" for="fcMode">Mode</label><select class="in" id="fcMode"><option value="due">Due today</option><option value="all">All cards</option><option value="new">New only</option></select></div>
-   <div class="fc-deck-actions"><button class="btn p" id="fcBuild" data-act="fcBuild" style="display:none">Build cards</button><button class="btn sm" id="fcShuffle" data-act="fcShuffle">Shuffle</button></div>
-  </div>
-  <div class="fc-deck-meta"><span id="fcScopeN">all documents</span><span id="fcDueN"></span></div>
- </div>
- <div class="panel" style="margin-bottom:12px"><div class="stats" id="fcStats"></div></div>
- <div class="fc-progress"><div class="fc-progress-bar"><i id="fcBar" style="width:0%"></i></div><div class="fc-progress-meta" id="fcn">0 cards</div><div class="fc-dots" id="fcDots"></div></div>
- <div class="fc-stage">
-  <div class="fc-stack" id="fcStack">
-   <div class="fc-card fc-card-back" id="fcNextCard" aria-hidden="true"><div class="fc-card-inner"><div class="fs"></div><div class="ft"></div></div></div>
-   <div class="fc-card" id="fc"><div class="fc-card-inner"><div class="fs" id="fs">Loading...</div><div class="ft" id="ft"></div><div class="fc-hint" id="fcHint">Tap or press Space to flip</div></div></div>
-  </div>
- </div>
- <div class="fc-actions" id="fcActions">
-  <button class="btn fc-rate fc-rate-again" id="fa2" data-act="fcAgain" style="display:none"><span class="fc-rate-key">1</span><span class="fc-rate-label">Again</span><span class="fc-rate-int" id="fa2Int"></span></button>
-  <button class="btn fc-rate fc-rate-hard" id="fh2" data-act="fcHard" style="display:none"><span class="fc-rate-key">2</span><span class="fc-rate-label">Hard</span><span class="fc-rate-int" id="fh2Int"></span></button>
-  <button class="btn fc-rate fc-rate-good" id="fg3" data-act="fcGood" style="display:none"><span class="fc-rate-key">3</span><span class="fc-rate-label">Good</span><span class="fc-rate-int" id="fg3Int"></span></button>
-  <button class="btn fc-rate fc-rate-easy" id="fe2" data-act="fcEasy" style="display:none"><span class="fc-rate-key">4</span><span class="fc-rate-label">Easy</span><span class="fc-rate-int" id="fe2Int"></span></button>
- </div>
- <div class="fc-toolbar">
-  <button class="btn sm" id="fsb" data-act="fcShow">Show answer</button>
-  <button class="btn sm" id="fs2" data-act="fcNext">Skip</button>
-  <button class="btn sm" id="fu" data-act="fcUndo" disabled>Undo</button>
-  <span class="fc-kbd">Space flip · 1-4 rate · ← skip · Z undo</span>
- </div>
- <div class="fc-summary" id="fcSummary" hidden></div>
+<section class="view" id="v7" style="padding:0">
+ <iframe id="fcFrame" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, viewport-fit=cover&quot;&gt;
+&lt;title&gt;Flashcards&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root{color-scheme:light;--bg:#F4F4FB;--ink:#1D1B33;--ink2:#52506E;--ink3:#8A88A6;--line:#E8E6F4;--acc:#6C56E8;--acc2:#4B3BC0;--soft:#EEEAFE;--ok:#1F9A6B;--warn:#E08A2B;--bad:#E5594A;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.5 Geist,system-ui,sans-serif;overflow-x:hidden}
+body:before,body:after{content:&quot;&quot;;position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);pointer-events:none}
+body:before{width:520px;height:520px;left:-120px;top:-160px;background:#D9D0FF;opacity:.75;animation:blob 15s ease-in-out infinite alternate}
+body:after{width:480px;height:480px;right:-140px;bottom:-160px;background:#FFDFC8;opacity:.7;animation:blob 18s ease-in-out infinite alternate-reverse}
+@keyframes blob{to{transform:translate(60px,40px) scale(1.12)}}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 24px 56px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+h1{margin:0;font-size:26px;letter-spacing:-.02em;background:linear-gradient(90deg,#1D1B33,#5B47D6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--ink3);margin-top:2px}
+.decks{display:flex;gap:6px;background:#fff;padding:4px;border-radius:14px;box-shadow:0 2px 14px rgba(70,60,140,.07)}
+.decks button{all:unset;cursor:pointer;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;color:var(--ink2);transition:all .2s;display:flex;gap:8px;align-items:center}
+.decks button:hover{background:#F6F5FD}.decks button.on{background:linear-gradient(135deg,#7C68F0,#5B47D6);color:#fff;box-shadow:0 6px 14px -6px rgba(108,86,232,.8)}
+.decks button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.decks i{font-style:normal;font-size:11px;padding:0 7px;border-radius:99px;background:rgba(108,86,232,.12);color:var(--acc)}.decks .on i{background:rgba(255,255,255,.25);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
+.panel{background:#fff;border-radius:18px;padding:18px;box-shadow:0 2px 14px rgba(70,60,140,.07)}
+.top{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.track{flex:1;height:8px;background:#ECE9FB;border-radius:5px;overflow:hidden}.track i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#8B77F5,#5B47D6);box-shadow:0 0 12px rgba(139,119,245,.6);transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.cnt{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tools{display:flex;gap:6px}.ib{all:unset;cursor:pointer;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#F6F5FD;color:var(--ink2);transition:all .18s}.ib:hover{background:var(--soft);color:var(--acc);transform:translateY(-1px)}.ib.on{background:#FFF1D6;color:#D9860F}.ib svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ib.on svg{fill:currentColor}
+.ib:focus-visible{outline:2px solid var(--acc)}
+.stage{position:relative;height:340px;perspective:1400px;margin:6px 6px 0}
+.ghost{position:absolute;inset:0;border-radius:24px;background:#fff;border:1px solid var(--line);transition:transform .4s}
+.g1{transform:translateY(12px) scale(.96);opacity:.75}.g2{transform:translateY(24px) scale(.92);opacity:.45}
+.card{position:absolute;inset:0;cursor:pointer;transform-style:preserve-3d;transition:transform .65s cubic-bezier(.2,.75,.2,1.05);outline:none}
+.card.flip{transform:rotateY(180deg)}
+.card.enter{animation:enter .5s cubic-bezier(.2,.8,.2,1) both}@keyframes enter{from{opacity:0;transform:translateY(24px) scale(.95)}}
+.card.out-r{transition:transform .38s ease-in,opacity .38s;transform:translateX(130%) rotate(10deg);opacity:0}
+.card.out-l{transition:transform .38s ease-in,opacity .38s;transform:translateX(-130%) rotate(-10deg);opacity:0}
+.face{position:absolute;inset:0;border-radius:24px;padding:34px 38px;display:flex;flex-direction:column;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 30px 60px -28px rgba(91,71,214,.55)}
+.front{background:linear-gradient(145deg,#fff,#F5F2FF);border:1px solid #E3DDFC}
+.back{background:linear-gradient(145deg,#6C56E8,#4B3BC0);color:#fff;transform:rotateY(180deg)}
+.back:before{content:&quot;&quot;;position:absolute;right:-50px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 65%)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--acc);align-self:flex-start;font-weight:500}.back .tag{background:rgba(255,255,255,.18);color:#fff}
+.txt{margin:auto 0;font-size:24px;line-height:1.45;font-weight:500;letter-spacing:-.015em}.back .txt{font-size:19px;line-height:1.6;font-weight:450}
+.hint{font-size:12px;color:var(--ink3);display:flex;justify-content:space-between;align-items:center}.back .hint{color:rgba(255,255,255,.7)}
+.src{font-size:11.5px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.16)}
+.rate{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:34px;opacity:.35;pointer-events:none;transition:opacity .3s}
+.rate.on{opacity:1;pointer-events:auto}
+.rate button{all:unset;cursor:pointer;text-align:center;padding:12px 6px;border-radius:14px;font-weight:500;font-size:13.5px;border:1.5px solid var(--line);background:#fff;transition:all .18s;position:relative}
+.rate button small{display:block;font-size:11px;color:var(--ink3);font-weight:400}.rate button kbd{position:absolute;top:6px;right:8px;font:11px Geist;color:var(--ink3)}
+.rate button:hover{transform:translateY(-3px)}.rate button:active{transform:scale(.96)}.rate button:focus-visible{outline:2px solid var(--acc)}
+.r1:hover{border-color:var(--bad);background:#FFF3F1}.r2:hover{border-color:var(--warn);background:#FFF7EC}.r3:hover{border-color:var(--acc);background:var(--soft)}.r4:hover{border-color:var(--ok);background:#EDFAF4}
+.show{all:unset;cursor:pointer;display:block;margin-top:34px;text-align:center;padding:13px;border-radius:14px;color:#fff;font-weight:500;background:linear-gradient(135deg,#7C68F0,#5B47D6);box-shadow:0 10px 20px -10px rgba(108,86,232,.9);transition:transform .18s;position:relative;overflow:hidden}
+.show:hover{transform:translateY(-2px)}.show:after{content:&quot;&quot;;position:absolute;top:0;left:-70%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg)}.show:hover:after{left:130%;transition:left .6s}.show:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.side{display:grid;gap:14px}.ph{display:flex;justify-content:space-between;font-weight:600;font-size:13.5px;margin-bottom:12px}.ph span+span{font-weight:400;color:var(--ink3);font-size:12px}
+.boxes{display:grid;gap:9px}.bx{display:grid;grid-template-columns:54px 1fr 26px;gap:10px;align-items:center;font-size:12.5px;color:var(--ink2)}
+.bx .b{height:10px;border-radius:6px;background:#F0EEFA;overflow:hidden}.bx .b i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#B7ABF6,#6C56E8);transition:width .6s cubic-bezier(.2,.7,.2,1)}.bx b{text-align:right;font-variant-numeric:tabular-nums}
+.bx.flash .b i{animation:glow .7s}@keyframes glow{50%{filter:brightness(1.3);box-shadow:0 0 12px rgba(108,86,232,.7)}}
+.ringw{display:flex;gap:16px;align-items:center}.ring{position:relative;width:84px;height:84px;flex:none}.ring svg{transform:rotate(-90deg);filter:drop-shadow(0 6px 10px rgba(108,86,232,.25))}.ring circle{fill:none;stroke-width:8;stroke-linecap:round}.ring .t{stroke:#ECE9FB}.ring .f{stroke:url(#g);stroke-dasharray:226;stroke-dashoffset:226;transition:stroke-dashoffset .8s cubic-bezier(.2,.7,.2,1)}.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:18px}
+.ringw p{margin:0;font-size:13px;color:var(--ink2)}.ringw strong{display:block;font-size:15px;color:var(--ink)}
+.week{display:flex;justify-content:space-between}.week div{text-align:center;font-size:11px;color:var(--ink3)}.week i{display:block;width:28px;height:28px;border-radius:50%;margin-bottom:4px;background:#F0EEFA;transition:transform .2s}.week i.d{background:linear-gradient(135deg,#8B77F5,#5B47D6);box-shadow:0 6px 10px -4px rgba(108,86,232,.7)}.week i.t{border:2px dashed #B7ABF6;background:#fff}.week div:hover i{transform:translateY(-2px)}
+.keys{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--ink3)}kbd{font:11.5px Geist;background:#F6F5FD;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;color:var(--ink2)}
+.done{text-align:center;padding:50px 20px;animation:enter .5s both}.done h2{font-size:22px;margin:10px 0 4px}.done p{color:var(--ink2);margin:0 0 18px}.medal{width:76px;height:76px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8B77F5,#5B47D6);box-shadow:0 0 0 8px #EEEAFE,0 18px 30px -12px rgba(108,86,232,.8);animation:pulse 2.4s ease-in-out infinite}@keyframes pulse{50%{box-shadow:0 0 0 14px #F4F1FF,0 18px 30px -12px rgba(108,86,232,.8)}}
+.medal svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.sum{display:flex;justify-content:center;gap:22px;margin-bottom:20px}.sum b{display:block;font-size:22px}.sum span{font-size:12px;color:var(--ink3)}
+.btn{all:unset;cursor:pointer;padding:10px 18px;border-radius:12px;font-weight:500;background:linear-gradient(135deg,#7C68F0,#5B47D6);color:#fff;box-shadow:0 8px 16px -8px rgba(108,86,232,.9);transition:transform .18s}.btn:hover{transform:translateY(-2px)}.btn:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:#1D1B33;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:5}#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.wrap{padding:18px 14px 40px}.stage{height:380px}.face{padding:26px 24px}.txt{font-size:20px}.back .txt{font-size:17px}.rate{grid-template-columns:repeat(2,1fr)}.decks{width:100%;overflow-x:auto}.keys{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;div class=&quot;wrap&quot;&gt;
+&lt;header&gt;&lt;div&gt;&lt;h1&gt;Flashcards&lt;/h1&gt;&lt;div class=&quot;sub&quot;&gt;Definition cards from your notes, scheduled with spaced repetition.&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;decks&quot; id=&quot;decks&quot; role=&quot;tablist&quot;&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;div class=&quot;grid&quot;&gt;
+ &lt;main class=&quot;panel&quot; id=&quot;main&quot;&gt;&lt;/main&gt;
+ &lt;aside class=&quot;side&quot;&gt;
+  &lt;div class=&quot;panel&quot;&gt;&lt;div class=&quot;ph&quot;&gt;&lt;span&gt;Daily goal&lt;/span&gt;&lt;span id=&quot;goalm&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ringw&quot;&gt;&lt;div class=&quot;ring&quot;&gt;&lt;svg width=&quot;84&quot; height=&quot;84&quot; viewBox=&quot;0 0 84 84&quot;&gt;&lt;defs&gt;&lt;linearGradient id=&quot;g&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#8B77F5&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-color=&quot;#5B47D6&quot;/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;circle class=&quot;t&quot; cx=&quot;42&quot; cy=&quot;42&quot; r=&quot;36&quot;/&gt;&lt;circle class=&quot;f&quot; id=&quot;gf&quot; cx=&quot;42&quot; cy=&quot;42&quot; r=&quot;36&quot;/&gt;&lt;/svg&gt;&lt;b id=&quot;gp&quot;&gt;0%&lt;/b&gt;&lt;/div&gt;&lt;p&gt;&lt;strong id=&quot;gs&quot;&gt;0 of 10 cards&lt;/strong&gt;Review 10 cards to keep your streak.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;panel&quot;&gt;&lt;div class=&quot;ph&quot;&gt;&lt;span&gt;Memory boxes&lt;/span&gt;&lt;span&gt;Leitner&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;boxes&quot; id=&quot;boxes&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;panel&quot;&gt;&lt;div class=&quot;ph&quot;&gt;&lt;span&gt;This week&lt;/span&gt;&lt;span&gt;5 day streak&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;week&quot; id=&quot;week&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;keys&quot;&gt;&lt;span&gt;&lt;kbd&gt;Space&lt;/kbd&gt; flip&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;1&lt;/kbd&gt;–&lt;kbd&gt;4&lt;/kbd&gt; rate&lt;/span&gt;&lt;span&gt;&lt;kbd&gt;S&lt;/kbd&gt; star&lt;/span&gt;&lt;/div&gt;
+ &lt;/aside&gt;
+&lt;/div&gt;&lt;/div&gt;
+&lt;div id=&quot;toast&quot; role=&quot;status&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+var DECKS={};:[[&quot;What is normalization?&quot;,&quot;Normalization is the process of organizing data in a relational database to reduce redundancy and improve integrity.&quot;,&quot;dbms_normalization.pdf, p. 3&quot;],[&quot;What is third normal form?&quot;,&quot;Third normal form removes transitive dependencies so that non key attributes depend only on the primary key.&quot;,&quot;dbms_normalization.pdf, p. 12&quot;],[&quot;What is a functional dependency?&quot;,&quot;A constraint stating that one set of attributes uniquely determines another set of attributes.&quot;,&quot;dbms_normalization.pdf, p. 7&quot;],[&quot;What is a candidate key?&quot;,&quot;A minimal set of attributes that uniquely identifies every tuple in a relation.&quot;,&quot;dbms_normalization.pdf, p. 5&quot;],[&quot;What is denormalization?&quot;,&quot;Deliberately introducing redundancy to improve read performance in analytical workloads.&quot;,&quot;dbms_normalization.pdf, p. 21&quot;],[&quot;What do the ACID properties describe?&quot;,&quot;How a transaction either completes fully or has no effect on the database.&quot;,&quot;sql_transactions.pdf, p. 2&quot;]],
+&quot;Operating Systems&quot;:[[&quot;What is a deadlock?&quot;,&quot;A set of processes are blocked because each holds a resource and waits for another resource held by a different process.&quot;,&quot;os_deadlocks.pdf, p. 4&quot;],[&quot;What are the four deadlock conditions?&quot;,&quot;Mutual exclusion, hold and wait, no preemption, and circular wait must all hold together.&quot;,&quot;os_deadlocks.pdf, p. 5&quot;],[&quot;What is a safe state?&quot;,&quot;A state in which the system can allocate resources to every process in some order and still avoid deadlock.&quot;,&quot;os_deadlocks.pdf, p. 9&quot;],[&quot;What is starvation?&quot;,&quot;A process waits indefinitely because other processes are always favoured by the scheduler.&quot;,&quot;os_scheduling.pdf, p. 11&quot;],[&quot;What is a semaphore?&quot;,&quot;A synchronization variable that controls access to a shared resource through wait and signal operations.&quot;,&quot;os_sync.pdf, p. 3&quot;]],
+&quot;Computer Networks&quot;:[[&quot;What is TCP?&quot;,&quot;A connection oriented transport protocol that provides reliable ordered delivery of a byte stream.&quot;,&quot;networks_week4.pdf, p. 2&quot;],[&quot;What is the three way handshake?&quot;,&quot;SYN, SYN ACK and ACK segments establish a TCP connection.&quot;,&quot;networks_week4.pdf, p. 3&quot;],[&quot;What is subnetting?&quot;,&quot;Dividing an IP network into smaller networks by borrowing bits from the host portion of the address.&quot;,&quot;networks_week5.pdf, p. 6&quot;],[&quot;What is the Domain Name System?&quot;,&quot;A distributed database that translates domain names into IP addresses.&quot;,&quot;networks_week6.pdf, p. 1&quot;]]};
+var cur,Q,idx,flipped,stats,goal=10,reviewed=0,starred={},$=function(i){return document.getElementById(i)};
+var ICON={shuf:&#x27;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5&quot;/&gt;&lt;/svg&gt;&#x27;,star:&#x27;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z&quot;/&gt;&lt;/svg&gt;&#x27;,undo:&#x27;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M3 7v6h6M3 13a9 9 0 119 8&quot;/&gt;&lt;/svg&gt;&#x27;};
+function toast(t){var e=$(&#x27;toast&#x27;);e.textContent=t;e.classList.add(&#x27;on&#x27;);clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove(&#x27;on&#x27;)},1800)}
+function load(name){cur=name;Q=DECKS[name].map(function(c,i){return{q:c[0],a:c[1],s:c[2],box:1+(i%3),id:name+i,topic_id:c[3]||1}});idx=0;flipped=false;stats={again:0,hard:0,good:0,easy:0};reviewed=0;buildDecks();render();boxes();week();goalUpd()}
+function buildDecks(){$(&#x27;decks&#x27;).innerHTML=Object.keys(DECKS).map(function(n){return&#x27;&lt;button role=&quot;tab&quot; class=&quot;&#x27;+(n===cur?&#x27;on&#x27;:&#x27;&#x27;)+&#x27;&quot; aria-selected=&quot;&#x27;+(n===cur)+&#x27;&quot; data-n=&quot;&#x27;+n+&#x27;&quot;&gt;&#x27;+n+&#x27;&lt;i&gt;&#x27;+DECKS[n].length+&#x27;&lt;/i&gt;&lt;/button&gt;&#x27;}).join(&#x27;&#x27;);document.querySelectorAll(&#x27;#decks button&#x27;).forEach(function(b){b.onclick=function(){load(b.dataset.n)}})}
+function render(){var m=$(&#x27;main&#x27;);if(idx&gt;=Q.length){var tot=stats.again+stats.hard+stats.good+stats.easy;m.innerHTML=&#x27;&lt;div class=&quot;done&quot;&gt;&lt;div class=&quot;medal&quot;&gt;&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M5 13l4 4L19 7&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&lt;h2&gt;Deck complete&lt;/h2&gt;&lt;p&gt;You reviewed &#x27;+tot+&#x27; cards in &#x27;+cur+&#x27;.&lt;/p&gt;&lt;div class=&quot;sum&quot;&gt;&lt;div&gt;&lt;b style=&quot;color:var(--bad)&quot;&gt;&#x27;+stats.again+&#x27;&lt;/b&gt;&lt;span&gt;Again&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color:var(--warn)&quot;&gt;&#x27;+stats.hard+&#x27;&lt;/b&gt;&lt;span&gt;Hard&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color:var(--acc)&quot;&gt;&#x27;+stats.good+&#x27;&lt;/b&gt;&lt;span&gt;Good&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color:var(--ok)&quot;&gt;&#x27;+stats.easy+&#x27;&lt;/b&gt;&lt;span&gt;Easy&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;button class=&quot;btn&quot; onclick=&quot;load(cur)&quot;&gt;Study again&lt;/button&gt;&lt;/div&gt;&#x27;;return}
+var c=Q[idx];m.innerHTML=&#x27;&lt;div class=&quot;top&quot;&gt;&lt;div class=&quot;track&quot;&gt;&lt;i id=&quot;pb&quot; style=&quot;width:&#x27;+(idx/Q.length*100)+&#x27;%&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;span class=&quot;cnt&quot;&gt;&#x27;+(idx+1)+&#x27; / &#x27;+Q.length+&#x27;&lt;/span&gt;&lt;div class=&quot;tools&quot;&gt;&lt;button class=&quot;ib &#x27;+(starred[c.id]?&#x27;on&#x27;:&#x27;&#x27;)+&#x27;&quot; id=&quot;bs&quot; aria-label=&quot;Star card&quot; title=&quot;Star (S)&quot;&gt;&#x27;+ICON.star+&#x27;&lt;/button&gt;&lt;button class=&quot;ib&quot; id=&quot;bh&quot; aria-label=&quot;Shuffle&quot; title=&quot;Shuffle&quot;&gt;&#x27;+ICON.shuf+&#x27;&lt;/button&gt;&lt;button class=&quot;ib&quot; id=&quot;bu&quot; aria-label=&quot;Restart&quot; title=&quot;Restart&quot;&gt;&#x27;+ICON.undo+&#x27;&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&#x27;+
+&#x27;&lt;div class=&quot;stage&quot;&gt;&lt;div class=&quot;ghost g2&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ghost g1&quot;&gt;&lt;/div&gt;&lt;div class=&quot;card enter&quot; id=&quot;card&quot; tabindex=&quot;0&quot; role=&quot;button&quot; aria-label=&quot;Flashcard, press space to flip&quot;&gt;&lt;div class=&quot;face front&quot;&gt;&lt;span class=&quot;tag&quot;&gt;&#x27;+cur+&#x27;  Box &#x27;+c.box+&#x27;&lt;/span&gt;&lt;div class=&quot;txt&quot;&gt;&#x27;+c.q+&#x27;&lt;/div&gt;&lt;div class=&quot;hint&quot;&gt;&lt;span&gt;Click or press Space to reveal&lt;/span&gt;&lt;span&gt;Question&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;face back&quot;&gt;&lt;span class=&quot;tag&quot;&gt;Answer&lt;/span&gt;&lt;div class=&quot;txt&quot;&gt;&#x27;+c.a+&#x27;&lt;/div&gt;&lt;div class=&quot;hint&quot;&gt;&lt;span class=&quot;src&quot;&gt;&#x27;+c.s+&#x27;&lt;/span&gt;&lt;span&gt;Box &#x27;+c.box+&#x27; of 5&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&#x27;+
+&#x27;&lt;button class=&quot;show&quot; id=&quot;sh&quot;&gt;Show answer&lt;/button&gt;&lt;div class=&quot;rate&quot; id=&quot;rate&quot;&gt;&lt;button class=&quot;r1&quot; data-r=&quot;again&quot;&gt;Again&lt;small&gt;1 day&lt;/small&gt;&lt;kbd&gt;1&lt;/kbd&gt;&lt;/button&gt;&lt;button class=&quot;r2&quot; data-r=&quot;hard&quot;&gt;Hard&lt;small&gt;stay in box&lt;/small&gt;&lt;kbd&gt;2&lt;/kbd&gt;&lt;/button&gt;&lt;button class=&quot;r3&quot; data-r=&quot;good&quot;&gt;Good&lt;small&gt;next box&lt;/small&gt;&lt;kbd&gt;3&lt;/kbd&gt;&lt;/button&gt;&lt;button class=&quot;r4&quot; data-r=&quot;easy&quot;&gt;Easy&lt;small&gt;skip a box&lt;/small&gt;&lt;kbd&gt;4&lt;/kbd&gt;&lt;/button&gt;&lt;/div&gt;&#x27;;
+$(&#x27;card&#x27;).onclick=flip;$(&#x27;sh&#x27;).onclick=flip;$(&#x27;bs&#x27;).onclick=star;$(&#x27;bh&#x27;).onclick=shuffle;$(&#x27;bu&#x27;).onclick=function(){load(cur)};
+document.querySelectorAll(&#x27;#rate button&#x27;).forEach(function(b){b.onclick=function(){rate(b.dataset.r)}});$(&#x27;rate&#x27;).classList.toggle(&#x27;on&#x27;,false)}
+function flip(){if(idx&gt;=Q.length)return;flipped=!flipped;$(&#x27;card&#x27;).classList.toggle(&#x27;flip&#x27;,flipped);$(&#x27;rate&#x27;).classList.toggle(&#x27;on&#x27;,flipped);$(&#x27;sh&#x27;).style.display=flipped?&#x27;none&#x27;:&#x27;block&#x27;;$(&#x27;rate&#x27;).style.display=&#x27;grid&#x27;;}
+function star(){var c=Q[idx];starred[c.id]=!starred[c.id];$(&#x27;bs&#x27;).classList.toggle(&#x27;on&#x27;,starred[c.id]);toast(starred[c.id]?&#x27;Card starred for review&#x27;:&#x27;Star removed&#x27;)}
+function shuffle(){for(var i=Q.length-1;i&gt;idx;i--){var j=idx+Math.floor(Math.random()*(i-idx+1));var t=Q[i];Q[i]=Q[j];Q[j]=t}flipped=false;render();toast(&#x27;Remaining cards shuffled&#x27;)}
+function rate(r){if(!flipped)return;var c=Q[idx],old=c.box;stats[r]++;reviewed++;c.box=r===&#x27;again&#x27;?1:r===&#x27;hard&#x27;?c.box:r===&#x27;good&#x27;?Math.min(5,c.box+1):Math.min(5,c.box+2);
+try{fetch(&#x27;/api/review/&#x27;+(c.topic_id||1),{method:&#x27;POST&#x27;,headers:{&#x27;Content-Type&#x27;:&#x27;application/json&#x27;},credentials:&#x27;same-origin&#x27;,body:JSON.stringify({confidence:r===&#x27;again&#x27;?&#x27;hard&#x27;:r===&#x27;hard&#x27;?&#x27;hard&#x27;:r===&#x27;good&#x27;?&#x27;medium&#x27;:&#x27;easy&#x27;})});}catch(e){}
+var el=$(&#x27;card&#x27;);el.classList.remove(&#x27;enter&#x27;);el.classList.add(r===&#x27;again&#x27;||r===&#x27;hard&#x27;?&#x27;out-l&#x27;:&#x27;out-r&#x27;);boxes(c.box);goalUpd();$(&#x27;pb&#x27;).style.width=((idx+1)/Q.length*100)+&#x27;%&#x27;;
+setTimeout(function(){idx++;flipped=false;render()},330)}
+function boxes(hl){var n=[0,0,0,0,0,0];Q.forEach(function(c){n[c.box]++});$(&#x27;boxes&#x27;).innerHTML=[1,2,3,4,5].map(function(i){return&#x27;&lt;div class=&quot;bx&#x27;+(hl===i?&#x27; flash&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&lt;span&gt;Box &#x27;+i+&#x27;&lt;/span&gt;&lt;div class=&quot;b&quot;&gt;&lt;i style=&quot;width:&#x27;+(n[i]/Q.length*100)+&#x27;%&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;b&gt;&#x27;+n[i]+&#x27;&lt;/b&gt;&lt;/div&gt;&#x27;}).join(&#x27;&#x27;)}
+function goalUpd(){var p=Math.min(100,Math.round(reviewed/goal*100));$(&#x27;gf&#x27;).style.strokeDashoffset=226*(1-p/100);$(&#x27;gp&#x27;).textContent=p+&#x27;%&#x27;;$(&#x27;gs&#x27;).textContent=reviewed+&#x27; of &#x27;+goal+&#x27; cards&#x27;;$(&#x27;goalm&#x27;).textContent=p&gt;=100?&#x27;Goal reached&#x27;:&#x27;Today&#x27;}
+function week(){var d=[&#x27;M&#x27;,&#x27;T&#x27;,&#x27;W&#x27;,&#x27;T&#x27;,&#x27;F&#x27;,&#x27;S&#x27;,&#x27;S&#x27;],done=[1,1,1,1,0,0,0];$(&#x27;week&#x27;).innerHTML=d.map(function(x,i){return&#x27;&lt;div&gt;&lt;i class=&quot;&#x27;+(done[i]?&#x27;d&#x27;:i===4?&#x27;t&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&lt;/i&gt;&#x27;+x+&#x27;&lt;/div&gt;&#x27;}).join(&#x27;&#x27;)}
+document.addEventListener(&#x27;keydown&#x27;,function(e){if(e.target.tagName===&#x27;INPUT&#x27;)return;if(e.code===&#x27;Space&#x27;){e.preventDefault();flip()}else if(&#x27;1234&#x27;.indexOf(e.key)&gt;-1&amp;&amp;e.key){rate([&#x27;again&#x27;,&#x27;hard&#x27;,&#x27;good&#x27;,&#x27;easy&#x27;][+e.key-1])}else if(e.key===&#x27;s&#x27;||e.key===&#x27;S&#x27;)star()});
+async function loadFromApi(){
+  try {
+    const r = await fetch(&#x27;/api/flashcards?due_only=0&amp;limit=50&#x27;, {credentials:&#x27;same-origin&#x27;});
+    const data = await r.json();
+    const cards = (data.cards||[]).map(c =&gt; [c.front, c.back, (c.source&amp;&amp;c.source.file?c.source.file:&#x27;&#x27;)+(c.source&amp;&amp;c.source.page?&#x27;, p. &#x27;+c.source.page:&#x27;&#x27;), 1]);
+    if (!cards.length) { document.getElementById(&#x27;main&#x27;).innerHTML=&#x27;&lt;div class=&quot;done&quot;&gt;&lt;h2&gt;No cards yet&lt;/h2&gt;&lt;p&gt;Build cards from a document first.&lt;/p&gt;&lt;/div&gt;&#x27;; return; }
+    DECKS[&#x27;My Deck&#x27;] = cards;
+    load(&#x27;My Deck&#x27;);
+  } catch(e) { console.error(e); }
+}
+loadFromApi();
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;
+" style="width:100%;height:calc(100vh - 80px);border:0;display:block"></iframe>
 </section>
 
 <section class="view" id="v8">
