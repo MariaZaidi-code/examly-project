@@ -77,7 +77,7 @@ body = r.json()
 check("chat answers grounded with citations",
       body.get("grounded") is True and body.get("citations") and "[1]" in body.get("answer", ""),
       f"mode={body.get('mode')} provider={body.get('provider')} in {dt:.1f}s")
-if body.get("mode") == "llm" and body.get("provider") in ("grok", "gemini"):
+if body.get("mode") == "llm" and body.get("provider") in ("omni", "grok", "gemini"):
     check("answer came from a real LLM provider", True, body.get("provider"))
 elif body.get("mode") == "extractive":
     # the chain ran but every provider refused (invalid Grok key / Gemini daily
