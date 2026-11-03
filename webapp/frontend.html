@@ -1241,8 +1241,8 @@ const ICONS=[
  ICON('<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 3h14v12"/>'),
  ICON('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>')
 ];
-const NAMES=["Overview","AI Study Assistant","Study Planner","Practice & Quizzes","My Weak Topics","Study Materials","Performance Analytics","Flashcards","Agent Activity"];
-const VIEWS=[loadOverview,loadAssistant,loadPlanner,loadQuiz,loadWeak,loadMaterials,loadAnalytics,loadFlashcards,loadActivity];
+const NAMES=["Overview","AI Study Assistant","Study Planner","Practice & Quizzes","My Weak Topics","Study Materials","Performance Analytics","Flashcards"];
+const VIEWS=[loadOverview,loadAssistant,loadPlanner,loadQuiz,loadWeak,loadMaterials,loadAnalytics,loadFlashcards];
 const nav=$("#nav");
 NAMES.forEach((n,i)=>{const b=document.createElement("button");b.innerHTML=ICONS[i]+"<span>"+esc(n)+"</span>";b.onclick=()=>go(i);nav.appendChild(b);});
 function go(i){S.view=i;clearTimeout(S.pollT);document.querySelectorAll(".view").forEach((v,k)=>v.classList.toggle("on",k===i));[].forEach.call(nav.children,(b,k)=>b.classList.toggle("on",k===i));const b=nav.children[i];if(b&&nav.scrollWidth>nav.clientWidth)nav.scrollTo({left:b.offsetLeft-24,behavior:"smooth"});window.scrollTo(0,0);VIEWS[i]().catch(fail);}
