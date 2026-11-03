@@ -194,6 +194,21 @@ dialog h3{margin:0 0 4px;font-size:16px}
 @media(min-width:821px){nav button{white-space:nowrap;font-size:13px}}
 @media(min-width:821px) and (max-width:1100px){.dash{grid-template-columns:1fr 1fr}.c3{grid-column:1/3;grid-row:auto}.wide{grid-column:1/3}}
 
+/* --- planner enhancements --- */
+.cal .c.today{background:linear-gradient(135deg,#F4F1FF,#fff);box-shadow:inset 0 0 0 2px var(--acc)}
+.cal .c.has-sess{background:linear-gradient(180deg,#FBFAFF,#fff)}
+.cal .c .sess-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acc);margin-left:4px;vertical-align:middle;animation:pulse 1.6s infinite}
+.planner-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:8px;transition:transform .2s,box-shadow .2s}
+.planner-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px -14px rgba(108,86,232,.4)}
+.planner-card.muted{opacity:.65}
+.pc-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#8B77F5,#5B47D6);flex:none;box-shadow:0 0 0 3px #EEEAFE}
+.planner-card.muted .pc-dot{background:#C5C3D8;box-shadow:0 0 0 3px #F0F0F5}
+.pc-body{flex:1;min-width:0}
+.pc-title{font-size:14px;font-weight:600;color:var(--ink)}
+.pc-meta{font-size:12px;color:var(--ink3);margin-top:2px}
+.pc-status{flex:none}
+#plannerHero .todo{padding:8px 10px;border-radius:10px}
+#plannerHero .todo:hover{background:#F4F1FF}
 /* --- empty dashboard: upload prompt + getting-started checklist --- */
 .eh{position:relative;overflow:hidden;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#fff 25%,#F3F0FF),radial-gradient(circle at 88% 15%,#E9E3FF,transparent 55%);border:1px solid #E3DDFC}
 .eh .ehArt{display:flex;gap:10px;font-size:32px;line-height:1}
@@ -300,18 +315,34 @@ dialog h3{margin:0 0 4px;font-size:16px}
 </section>
 
 <section class="view" id="v2">
- <div class="ph"><div><h1>Study Planner</h1><div class="sub">Plan sessions, review proposals, and track completion.</div></div></div>
- <div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Propose a schedule</span><span>Nothing is saved until you confirm</span></div>
-  <div class="frm"><div><label class="lbl" for="pDays">Days</label><input class="in" id="pDays" type="number" value="7" min="1" max="31"></div>
+ <div class="ph"><div><h1>Study Planner</h1><div class="sub">Plan sessions, track progress, and stay on schedule.</div></div></div>
+ <div class="panel" id="plannerHero" style="margin-bottom:12px;background:linear-gradient(135deg,#F4F1FF,#fff);border:1px solid #E3DDFC">
+  <div class="ph2"><span>Today</span><span id="plannerTodayN"></span></div>
+  <div id="plannerToday" class="empty">No sessions scheduled today. Propose a plan below.</div>
+ </div>
+ <div class="panel" style="margin-bottom:12px">
+  <div class="ph2"><span>Propose a schedule</span><span>Nothing is saved until you confirm</span></div>
+  <div class="frm">
+   <div><label class="lbl" for="pDays">Days</label><input class="in" id="pDays" type="number" value="7" min="1" max="31"></div>
    <div><label class="lbl" for="pPer">Sessions per day</label><input class="in" id="pPer" type="number" value="1" min="1" max="5"></div>
    <div><label class="lbl" for="pDur">Minutes each</label><input class="in" id="pDur" type="number" value="45" min="10" max="240"></div>
    <div><label class="lbl" for="pTime">Start time</label><input class="in" id="pTime" type="time" value="18:00"></div>
-   <div><button class="btn p" data-act="propose">Propose</button></div></div></div>
+   <div><label class="lbl" for="pSubject">Focus subject</label><select class="in" id="pSubject"><option value="">All subjects</option></select></div>
+   <div><button class="btn p" data-act="propose" style="width:100%">Propose</button></div></div></div>
  <div id="proposal"></div>
- <div style="display:flex;align-items:center;gap:10px;margin:14px 0 8px"><b id="calTitle" style="font-size:13.5px">Month</b><button class="btn sm" data-act="calPrev" aria-label="Previous month">&lsaquo;</button><button class="btn sm" data-act="calNext" aria-label="Next month">&rsaquo;</button><span class="s" id="sessCount"></span></div>
+ <div style="display:flex;align-items:center;gap:10px;margin:14px 0 8px;flex-wrap:wrap">
+  <b id="calTitle" style="font-size:13.5px">Month</b>
+  <button class="btn sm" data-act="calPrev" aria-label="Previous month">&lsaquo;</button>
+  <button class="btn sm" data-act="calNext" aria-label="Next month">&rsaquo;</button>
+  <span class="s" id="sessCount"></span>
+  <span class="s" id="plannerProgress" style="margin-left:auto"></span>
+ </div>
  <div class="cal" id="cal"></div>
- <div class="panel" style="margin-top:12px"><div class="ph2"><span>Sessions this month</span></div><div id="sessList"></div></div>
- <div class="panel" style="margin-top:12px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+ <div class="panel" style="margin-top:12px">
+  <div class="ph2"><span>Sessions this month</span><span id="sessMonthN"></span></div>
+  <div id="sessList"></div>
+ </div>
+ <div class="panel" style="margin-top:12px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#fff,#F4F1FF)">
   <div class="ring" style="margin:0;width:96px;height:96px"><svg width="96" height="96" viewBox="0 0 120 120"><circle class="t" cx="60" cy="60" r="50"/><circle id="tf" class="f" cx="60" cy="60" r="50"/></svg><b id="tc" style="font-size:20px">25:00</b></div>
   <div style="flex:1;min-width:180px"><div class="ph2"><span>Focus timer</span></div><div class="s" style="font-size:12.5px;color:var(--ink3);margin-bottom:8px">A 25 minute focus block. Completing it logs 25 study minutes.</div><button class="btn p" id="tb" data-act="focusToggle">Start focus</button></div>
  </div>
@@ -592,22 +623,49 @@ async function loadPlanner(month){
  S.month=c.month;
  const ym=c.month.split("-"),y=+ym[0],m=+ym[1];
  $("#calTitle").textContent=new Date(y,m-1,1).toLocaleDateString(undefined,{month:"long",year:"numeric"});
+ // populate subject filter
+ const sel=$("#pSubject");
+ if(sel && S.subjects && S.subjects.length){
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All subjects</option>'+S.subjects.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join("");
+  sel.value=cur;
+ }
  let h=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>'<div class="h">'+d+"</div>").join("");
  for(let i=0;i<c.first_weekday;i++)h+='<div class="c"></div>';
  const list=[];
+ const todayIso=new Date().toISOString().slice(0,10);
+ const todaySessions=[];
  for(let day=1;day<=c.days_in_month;day++){
   const key=c.month+"-"+String(day).padStart(2,"0"),dd=c.days[key]||{sessions:[],exams:[]};
-  h+='<div class="c"><b>'+day+"</b>"+dd.exams.map(e=>'<span class="chip x" title="'+esc(e.title+", "+e.subject)+'">Exam: '+esc(e.subject)+"</span>").join("")+dd.sessions.map(s=>{list.push(s);return '<span class="chip'+(s.status==="planned"?"":" d")+'" title="'+esc(s.subject+": "+s.topic)+'">'+fmtTime(s.scheduled_at)+" "+esc(s.topic)+"</span>";}).join("")+"</div>";
+  const isToday=key===todayIso;
+  const hasSess=dd.sessions.length>0;
+  h+='<div class="c'+(isToday?" today":"")+(hasSess?" has-sess":"")+'"><b>'+day+"</b>"+dd.exams.map(e=>'<span class="chip x" title="'+esc(e.title+", "+e.subject)+'">Exam: '+esc(e.subject)+"</span>").join("")+dd.sessions.map(s=>{list.push(s);if(s.scheduled_at.slice(0,10)===todayIso)todaySessions.push(s);const col=s.status==="planned"?"":" d";return '<span class="chip'+col+'" title="'+esc(s.subject+": "+s.topic)+'">'+fmtTime(s.scheduled_at)+" "+esc(s.topic)+"</span>";}).join("")+(hasSess?'<span class="sess-dot" title="'+dd.sessions.length+' session(s)"></span>':"")+"</div>";
  }
  $("#cal").innerHTML=h;
  $("#sessCount").textContent=plural(list.length,"session");
- $("#sessList").innerHTML=list.length?list.map(s=>row(esc(s.topic),esc(fmtDate(s.scheduled_at))+", "+fmtTime(s.scheduled_at)+", "+esc(s.subject)+", "+s.duration_min+" min",'<div class="sbtns">'+(s.status==="planned"?'<button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="done">Done</button><button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="skipped">Skip</button>':'<span class="pill '+(s.status==="done"?"ok":"")+'">'+(s.status==="done"?"Done":"Skipped")+'</span><button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="planned">Undo</button>')+'<button class="btn sm" data-act="sessionDelete" data-id="'+s.id+'" aria-label="Delete session">&times;</button></div>')).join(""):'<div class="empty">No sessions this month.</div>';
+ // today hero
+ const tn=$("#plannerTodayN");if(tn)tn.textContent=todaySessions.length?plural(todaySessions.length,"session")+" today":"No sessions today";
+ const th=$("#plannerToday");
+ if(th){
+  if(!todaySessions.length){th.className="empty";th.textContent="No sessions scheduled today. Propose a plan below.";}
+  else{th.className="";th.innerHTML=todaySessions.map(s=>'<div class="todo on" style="cursor:default"><div class="box"></div><div><b>'+esc(s.topic)+'</b><small>'+fmtTime(s.scheduled_at)+" \u00b7 "+s.duration_min+" min \u00b7 "+esc(s.subject)+'</small></div><div class="sbtns">'+(s.status==="planned"?'<button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="done">Done</button><button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="skipped">Skip</button>':'<span class="pill '+(s.status==="done"?"ok":"")+'">'+(s.status==="done"?"Done":"Skipped")+'</span>')+'<button class="btn sm" data-act="sessionDelete" data-id="'+s.id+'" aria-label="Delete">&times;</button></div></div>').join("");}}
+ // progress
+ const done=list.filter(s=>s.status==="done").length,skipped=list.filter(s=>s.status==="skipped").length,planned=list.filter(s=>s.status==="planned").length;
+ const pr=$("#plannerProgress");if(pr)pr.textContent=list.length?("Progress: "+done+" done \u00b7 "+planned+" planned \u00b7 "+skipped+" skipped"):"";
+ const smn=$("#sessMonthN");if(smn)smn.textContent=list.length?plural(list.length,"session"):"";
+ // session list as cards
+ $("#sessList").innerHTML=list.length?list.map(s=>{
+  const st=s.status==="done"?"ok":s.status==="skipped"?"":"";
+  return '<div class="planner-card'+(s.status!=="planned"?" muted":"")+'"><div class="pc-dot"></div><div class="pc-body"><div class="pc-title">'+esc(s.topic)+'</div><div class="pc-meta">'+esc(fmtDate(s.scheduled_at))+", "+fmtTime(s.scheduled_at)+" \u00b7 "+s.duration_min+" min \u00b7 "+esc(s.subject)+'</div></div><div class="pc-status"><span class="pill '+(s.status==="done"?"ok":s.status==="skipped"?"":"warn")+'">'+(s.status==="done"?"Done":s.status==="skipped"?"Skipped":"Planned")+'</span></div><div class="sbtns">'+(s.status==="planned"?'<button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="done">Done</button><button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="skipped">Skip</button>':'<button class="btn sm" data-act="sessionStatus" data-id="'+s.id+'" data-status="planned">Undo</button>')+'<button class="btn sm" data-act="sessionDelete" data-id="'+s.id+'" aria-label="Delete session">&times;</button></div></div>';
+ }).join(""):'<div class="empty">No sessions this month. Propose a schedule above.</div>';
  paintProposal();
 }
 function paintProposal(){const p=S.proposal,box=$("#proposal");if(!p){box.innerHTML="";return;}
  box.innerHTML='<div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Proposed schedule</span><span>Nothing is saved until you confirm</span></div>'+p.items.map(i=>row(esc(fmtDate(i.scheduled_at))+", "+fmtTime(i.scheduled_at),esc(i.subject)+", "+esc(i.topic),'<span class="s">'+i.duration_min+" min</span>")).join("")+'<div style="display:flex;gap:8px;margin-top:8px"><button class="btn p" data-act="proposalConfirm">Confirm and save</button><button class="btn" data-act="proposalDiscard">Discard</button></div></div>';}
 async function propose(){
+ const sid=$("#pSubject").value;
  const body={days:+$("#pDays").value,start_time:$("#pTime").value||"18:00",duration_min:+$("#pDur").value,per_day:+$("#pPer").value};
+ if(sid)body.subject_ids=[+sid];
  if(S.proposal){try{await send("/planner/proposals/"+S.proposal.id,"DELETE");}catch(e){}}
  S.proposal=await send("/planner/propose","POST",body);paintProposal();
 }
