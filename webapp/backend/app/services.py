@@ -321,7 +321,7 @@ def sm2_update(c, topic_id, correct, day=None, quality=None):
               (topic_id, ease, interval, reps, lapses, due, day.isoformat()))
     return {"topic_id": topic_id, "interval_days": interval, "due": due, "reps": reps, "lapses": lapses, "ease": round(ease, 2)}
 
-def flashcards(c, limit=20, document_id=None):
+def flashcards(c, limit=20, document_id=None, due_only=True):
     """Cards are the quiz questions already built from the student's notes; a card is due when its topic's review is due.
 
     With ``document_id``, only cards whose source file is that document are
@@ -341,7 +341,7 @@ def flashcards(c, limit=20, document_id=None):
                        LEFT JOIN reviews r ON r.topic_id=t.id WHERE 1=1""" + where + " ORDER BY q.id DESC", args)
     cards = []
     for q in rows:
-        if q["due"] and q["due"] > today: continue
+        if due_only and q["due"] and q["due"] > today: continue
         opts = db.jloads(q["options"], [])
         if not (0 <= q["correct_index"] < len(opts)): continue
         cards.append({"question_id": q["question_id"], "topic_id": q["topic_id"], "topic": q["topic"],

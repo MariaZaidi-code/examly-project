@@ -273,6 +273,51 @@ dialog h3{margin:0 0 4px;font-size:16px}
 .quiz-review-opt.wrong{background:#F8E9E9;color:#C0392B}
 .quiz-review-exp{margin-top:8px;font-size:13px;color:var(--ink2);line-height:1.5}
 .quiz-review-src{font-size:11.5px;color:var(--ink3);margin-top:4px}
+/* --- flashcards premium layout --- */
+.fc-deck-panel{padding:14px 16px}
+.fc-deck-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.fc-deck-field{flex:1;min-width:160px}
+.fc-deck-actions{display:flex;gap:8px;align-items:flex-end}
+.fc-deck-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--ink3)}
+.fc-progress{margin:14px 0 18px}
+.fc-progress-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-bottom:6px}
+.fc-progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#8B77F5,#5B47D6);border-radius:4px;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.fc-progress-meta{font-size:12px;color:var(--ink3);margin-bottom:8px}
+.fc-dots{display:flex;gap:4px;flex-wrap:wrap}
+.fcdot{width:8px;height:8px;border-radius:50%;background:var(--line2);transition:all .25s}
+.fcdot.done{background:#2FBF7E}
+.fcdot.cur{background:var(--acc);box-shadow:0 0 0 3px #EEEAFE;transform:scale(1.2)}
+.fc-stage{position:relative;height:260px;display:grid;place-items:center;margin:8px 0 18px;perspective:1200px}
+.fc-stack{position:relative;width:min(460px,100%);height:220px}
+.fc-card{position:absolute;inset:0;border-radius:20px;padding:32px 28px;display:flex;flex-direction:column;justify-content:center;box-shadow:0 18px 40px -22px rgba(108,86,232,.5);background:linear-gradient(135deg,#fff,#F4F1FF);border:1px solid #E3DDFC;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .35s;transform-style:preserve-3d;backface-visibility:hidden}
+.fc-card.back{background:linear-gradient(135deg,#6C56E8,#4B3BC0);color:#fff;border-color:transparent}
+.fc-card.fc-card-back{transform:translateY(8px) scale(.96);opacity:.5;pointer-events:none;z-index:0}
+.fc-card-inner{display:flex;flex-direction:column;gap:8px}
+.fc-card .fs{font-size:12px;opacity:.65;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.fc-card .ft{font-size:19px;line-height:1.55;font-weight:500;letter-spacing:-.01em}
+.fc-card.back .ft{color:#fff}
+.fc-hint{font-size:11.5px;opacity:.55;margin-top:10px}
+.fc-card.flip-out{transform:translateX(-120%) rotate(-6deg);opacity:0}
+.fc-card.flip-in{animation:fcin .42s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fcin{from{opacity:0;transform:translateX(120%) rotate(6deg)}}
+.fc-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.fc-rate{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s,background .18s}
+.fc-rate:hover{transform:translateY(-2px);box-shadow:0 8px 18px -12px rgba(108,86,232,.4)}
+.fc-rate-key{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--soft);color:var(--acc)}
+.fc-rate-label{font-size:13px;font-weight:600;color:var(--ink)}
+.fc-rate-int{font-size:11px;color:var(--ink3)}
+.fc-rate-again .fc-rate-key{background:#FDECEA;color:#C0392B}
+.fc-rate-hard .fc-rate-key{background:#FFF4E0;color:#B9822F}
+.fc-rate-good .fc-rate-key{background:#E8F1FE;color:#3B6FD6}
+.fc-rate-easy .fc-rate-key{background:#E6F7EF;color:#1F8A5F}
+.fc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.fc-kbd{font-size:11.5px;color:var(--ink3);margin-left:auto}
+.fc-summary{padding:24px;text-align:center}
+.fc-summary h3{margin:0 0 6px;font-size:20px}
+.fc-summary .fc-summary-stats{display:flex;justify-content:center;gap:24px;margin:14px 0;flex-wrap:wrap}
+.fc-summary .fc-summary-stats div{text-align:center}
+.fc-summary .fc-summary-stats b{display:block;font-size:22px;font-weight:700}
+.fc-summary .fc-summary-stats small{font-size:12px;color:var(--ink3)}
 /* --- empty dashboard: upload prompt + getting-started checklist --- */
 .eh{position:relative;overflow:hidden;display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:linear-gradient(120deg,#fff 25%,#F3F0FF),radial-gradient(circle at 88% 15%,#E9E3FF,transparent 55%);border:1px solid #E3DDFC}
 .eh .ehArt{display:flex;gap:10px;font-size:32px;line-height:1}
@@ -436,19 +481,36 @@ dialog h3{margin:0 0 4px;font-size:16px}
 </section>
 
 <section class="view" id="v7">
- <div class="ph"><div><h1>Flashcards</h1><div class="sub">Practice questions from your notes, scheduled with spaced repetition.</div></div></div>
- <div class="panel" style="margin-bottom:12px"><div class="ph2"><span>Deck</span><span id="fcScopeN">all documents</span></div>
-  <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-   <div style="flex:1;min-width:220px"><label class="lbl" for="fcDoc">Flashcards from</label><select class="in" id="fcDoc"><option value="">All documents</option></select></div>
-   <div><button class="btn p" id="fcBuild" data-act="fcBuild" style="display:none">Build cards from this file</button></div>
+ <div class="ph"><div><h1>Flashcards</h1><div class="sub">Spaced repetition from your notes. Rate honestly — the schedule adapts.</div></div><span class="pill" id="fcModePill">Study mode</span></div>
+ <div class="panel fc-deck-panel" style="margin-bottom:12px">
+  <div class="fc-deck-row">
+   <div class="fc-deck-field"><label class="lbl" for="fcDoc">Deck</label><select class="in" id="fcDoc"><option value="">All documents</option></select></div>
+   <div class="fc-deck-field"><label class="lbl" for="fcMode">Mode</label><select class="in" id="fcMode"><option value="due">Due today</option><option value="all">All cards</option><option value="new">New only</option></select></div>
+   <div class="fc-deck-actions"><button class="btn p" id="fcBuild" data-act="fcBuild" style="display:none">Build cards</button><button class="btn sm" id="fcShuffle" data-act="fcShuffle">Shuffle</button></div>
   </div>
-  <div class="s" style="font-size:12.5px;color:var(--ink3);margin-top:8px">Pick one document to practise only its cards &mdash; or build fresh cards straight from that file.</div>
+  <div class="fc-deck-meta"><span id="fcScopeN">all documents</span><span id="fcDueN"></span></div>
  </div>
  <div class="panel" style="margin-bottom:12px"><div class="stats" id="fcStats"></div></div>
- <div class="bar" style="width:100%;margin-bottom:6px"><i id="fcBar" style="width:0%"></i></div>
- <div class="s" style="font-size:12px;color:var(--ink3);margin-bottom:10px" id="fcn"></div>
- <div class="fc" id="fc"><div class="fs" id="fs">Loading...</div><div class="ft" id="ft"></div></div>
- <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="fsb" data-act="fcShow">Show answer</button><button class="btn" id="fh" style="display:none" data-act="fcHard">Hard</button><button class="btn" id="fm" style="display:none" data-act="fcMed">Medium</button><button class="btn" id="fe" style="display:none" data-act="fcEasy">Easy</button><button class="btn sm" id="fs2" data-act="fcNext">Skip card</button></div>
+ <div class="fc-progress"><div class="fc-progress-bar"><i id="fcBar" style="width:0%"></i></div><div class="fc-progress-meta" id="fcn">0 cards</div><div class="fc-dots" id="fcDots"></div></div>
+ <div class="fc-stage">
+  <div class="fc-stack" id="fcStack">
+   <div class="fc-card fc-card-back" id="fcNextCard" aria-hidden="true"><div class="fc-card-inner"><div class="fs"></div><div class="ft"></div></div></div>
+   <div class="fc-card" id="fc"><div class="fc-card-inner"><div class="fs" id="fs">Loading...</div><div class="ft" id="ft"></div><div class="fc-hint" id="fcHint">Tap or press Space to flip</div></div></div>
+  </div>
+ </div>
+ <div class="fc-actions" id="fcActions">
+  <button class="btn fc-rate fc-rate-again" id="fa2" data-act="fcAgain" style="display:none"><span class="fc-rate-key">1</span><span class="fc-rate-label">Again</span><span class="fc-rate-int" id="fa2Int"></span></button>
+  <button class="btn fc-rate fc-rate-hard" id="fh2" data-act="fcHard" style="display:none"><span class="fc-rate-key">2</span><span class="fc-rate-label">Hard</span><span class="fc-rate-int" id="fh2Int"></span></button>
+  <button class="btn fc-rate fc-rate-good" id="fg3" data-act="fcGood" style="display:none"><span class="fc-rate-key">3</span><span class="fc-rate-label">Good</span><span class="fc-rate-int" id="fg3Int"></span></button>
+  <button class="btn fc-rate fc-rate-easy" id="fe2" data-act="fcEasy" style="display:none"><span class="fc-rate-key">4</span><span class="fc-rate-label">Easy</span><span class="fc-rate-int" id="fe2Int"></span></button>
+ </div>
+ <div class="fc-toolbar">
+  <button class="btn sm" id="fsb" data-act="fcShow">Show answer</button>
+  <button class="btn sm" id="fs2" data-act="fcNext">Skip</button>
+  <button class="btn sm" id="fu" data-act="fcUndo" disabled>Undo</button>
+  <span class="fc-kbd">Space flip · 1-4 rate · ← skip · Z undo</span>
+ </div>
+ <div class="fc-summary" id="fcSummary" hidden></div>
 </section>
 
 <section class="view" id="v8">
@@ -847,13 +909,17 @@ async function loadAnalytics(){
 }
 
 /* ---------- 7 flashcards ---------- */
+function fcDueOnly(){const m=$("#fcMode");return !m||m.value!=="all";}
 async function loadFlashcards(){
+ const mode=$("#fcMode")?$("#fcMode").value:"due";
+ const dueOnly = mode!=="all";
+ const qs=(S.fcDoc?"?document_id="+encodeURIComponent(S.fcDoc):"")+ (dueOnly?"&due_only=1":"&due_only=0");
  const [f,docs]=await Promise.all([
-   api("/flashcards"+(S.fcDoc?"?document_id="+encodeURIComponent(S.fcDoc):"")),
+   api("/flashcards"+(qs.startsWith("?")?qs:"?"+qs)),
    S.fdocs.length?Promise.resolve(S.fdocs):api("/materials")]);
  S.fdocs=docs.filter(d=>d.status==="indexed");
  paintFcDocs();
- S.flash={data:f,i:0,flipped:false};paintFlashStats();paintFlash();paintFcScope();
+ S.flash={data:f,i:0,flipped:false,history:[]};paintFlashStats();paintFlash();paintFcScope();paintFcDots();paintFcIntervals();
 }
 function paintFcDocs(){
  const sel=$("#fcDoc");if(!sel)return;
@@ -872,31 +938,58 @@ function paintFlashStats(){
  $("#fcStats").innerHTML=item(f.due_count,"Due today")+item(f.total,"Total cards")+item(f.mastered,"Mastered");
  $("#fcBar").style.width=(f.total?Math.round(f.mastered/f.total*100):0)+"%";
 }
+function paintFcDots(){
+ const z=S.flash;if(!z)return;
+ const cards=z.data.cards||[],n=cards.length,dots=$("#fcDots");
+ if(!dots)return;
+ dots.innerHTML=cards.map((_,i)=>'<span class="fcdot'+(i<z.i?" done":i===z.i?" cur":"")+'"></span>').join("");
+}
+function nextIv(c,q){
+ const reps=c.reps||0,iv=c.interval_days||0;
+ if(q<3) return 1;
+ if(reps===0) return 1;
+ if(reps===1) return 3;
+ if(reps===2) return 7;
+ if(q===3) return Math.max(1,Math.round(iv*0.8));
+ if(q===5) return Math.max(1,Math.round(iv*1.3));
+ return Math.max(1,iv);
+}
+function fmtIv(d){return d>=30?Math.round(d/30)+"mo":d>=7?Math.round(d/7)+"w":d+"d";}
+function paintFcIntervals(){
+ const z=S.flash;if(!z)return;
+ const c=z.data.cards&&z.data.cards[z.i];
+ if(!c)return;
+ const ivs={fa2Int:nextIv(c,1),fh2Int:nextIv(c,3),fg3Int:nextIv(c,4),fe2Int:nextIv(c,5)};
+ for(const k in ivs){const el=document.getElementById(k);if(el)el.textContent=fmtIv(ivs[k]);}
+}
 function paintFlash(){
  const z=S.flash;if(!z)return;
  const cards=z.data.cards||[],c=cards[z.i],fc=$("#fc"),scoped=!!z.data.scope;
  if(!c){
-  fc.className="fc";
+  fc.className="fc-card";
   $("#fs").textContent=z.data.total===0?(scoped?"No cards from this file yet":"No flashcards yet"):"All caught up";
   $("#ft").textContent=z.data.total===0
    ?(scoped?"This document has no flashcards yet. Press \u201cBuild cards from this file\u201d and they will appear here."
           :"Take a quiz to build cards from your notes.")
    :(scoped?"No cards are due for this document right now.":"No cards are due right now. Take a quiz to build more cards.");
-  $("#fsb").style.display="none";$("#fh").style.display=$("#fm").style.display=$("#fe").style.display=$("#fs2").style.display="none";
+  $("#fsb").style.display="none";$("#fa2").style.display=$("#fh2").style.display=$("#fg3").style.display=$("#fe2").style.display=$("#fs2").style.display="none";
   $("#fcn").textContent="0 cards due"+(scoped?" from "+z.data.scope.filename:"");
   return;
  }
  const flipped=z.flipped;
- fc.className="fc"+(flipped?" back":"");
+ fc.className="fc-card"+(flipped?" back":"");
  $("#fs").textContent=c.subject+" \u00b7 "+(flipped?"Answer":"Question")+" "+(z.i+1)+" of "+cards.length;
  $("#ft").textContent=flipped?c.back:c.front;
  $("#fsb").style.display=flipped?"none":"";
  $("#fs2").style.display="";
- $("#fh").style.display=$("#fm").style.display=$("#fe").style.display=flipped?"":"none";
+ $("#fa2").style.display=$("#fh2").style.display=$("#fg3").style.display=$("#fe2").style.display=flipped?"":"none";
  $("#fcn").textContent=(cards.length-z.i)+" cards left in this batch"+(scoped?" from "+z.data.scope.filename:"")+(c.source&&c.source.file?", source "+c.source.file:"");
+ paintFcDots();paintFcIntervals();
 }
 async function gradeCard(confidence){
  const z=S.flash;const c=z&&z.data.cards[z.i];if(!c)return;
+ if(!z.history)z.history=[];
+ z.history.push({i:z.i});
  await send("/review/"+c.topic_id,"POST",{confidence:confidence});
  toast(confidence==="easy"?"Easy. Scheduled further out.":confidence==="medium"?"Medium. Scheduled ahead.":"Hard. Back to tomorrow.");
  await loadFlashcards();
@@ -965,10 +1058,13 @@ const ACTIONS={
  sessionStatus:async t=>{await send("/sessions/"+t.dataset.id,"PATCH",{status:t.dataset.status});await loadPlanner();refreshDash().catch(()=>{});},
  sessionDelete:async t=>{if(!confirm("Delete this session?"))return;await send("/sessions/"+t.dataset.id,"DELETE");await loadPlanner();},
  fcShow:()=>{if(S.flash){S.flash.flipped=true;paintFlash();}},
+ fcAgain:()=>gradeCard("again").catch(fail),
  fcHard:()=>gradeCard("hard").catch(fail),
- fcMed:()=>gradeCard("medium").catch(fail),
+ fcGood:()=>gradeCard("medium").catch(fail),
  fcEasy:()=>gradeCard("easy").catch(fail),
  fcNext:()=>{if(S.flash&&S.flash.data.cards.length){S.flash.i=(S.flash.i+1)%S.flash.data.cards.length;S.flash.flipped=false;paintFlash();}},
+ fcUndo:()=>{ if(S.flash&&S.flash.history&&S.flash.history.length){ const h=S.flash.history.pop(); S.flash.i=h.i; S.flash.flipped=false; paintFlash(); toast("Undone."); } },
+ fcShuffle:()=>{ if(S.flash&&S.flash.data.cards){ S.flash.data.cards.sort(()=>Math.random()-.5); S.flash.i=0; S.flash.flipped=false; paintFlash(); toast("Shuffled."); } },
  fcBuild:async()=>{
   const id=+S.fcDoc;if(!id){toast("Choose a document first.",true);return;}
   const doc=(S.fdocs||[]).find(d=>d.id===id);
@@ -996,12 +1092,25 @@ document.addEventListener("change",e=>{
  if(e.target.id==="aSubject")paintDocs();
  if(e.target.id==="mFile"){S.dragFile=null;paintDz();}
  if(e.target.id==="fcDoc"){S.fcDoc=e.target.value;loadFlashcards().catch(fail);return;}
+ if(e.target.id==="fcMode"){loadFlashcards().catch(fail);return;}
  if(e.target.dataset&&e.target.dataset.doc){const id=+e.target.dataset.doc;e.target.checked?S.uncheck.delete(id):S.uncheck.add(id);}
 });
 document.addEventListener("keydown",e=>{
  if(e.target.id==="chatIn"&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();ACTIONS.chatSend().catch(fail);}
  if(e.target.id==="ovSearch"&&e.key==="Enter"){const v=e.target.value.trim();if(v){S.prefillMsg=v;e.target.value="";go(1);}}
  if(e.target.id==="profBtn"&&(e.key==="Enter"||e.key===" ")){e.preventDefault();ACTIONS.editProfile().catch(fail);}
+});
+document.addEventListener("keydown",e=>{
+ if(S.view!==7)return;
+ if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||e.target.tagName==="SELECT")return;
+ const z=S.flash;if(!z||!z.data||!z.data.cards||!z.data.cards.length)return;
+ if(e.key===" "||e.key==="Enter"){e.preventDefault();ACTIONS.fcShow&&ACTIONS.fcShow();}
+ if(e.key==="1"){e.preventDefault();const b=document.querySelector('[data-act="fcAgain"]');if(b&&!b.disabled)b.click();}
+ if(e.key==="2"){e.preventDefault();const b=document.querySelector('[data-act="fcHard"]');if(b&&!b.disabled)b.click();}
+ if(e.key==="3"){e.preventDefault();const b=document.querySelector('[data-act="fcGood"]');if(b&&!b.disabled)b.click();}
+ if(e.key==="4"){e.preventDefault();const b=document.querySelector('[data-act="fcEasy"]');if(b&&!b.disabled)b.click();}
+ if(e.key==="ArrowLeft"||e.key==="s"){e.preventDefault();const b=document.querySelector('[data-act="fcNext"]');if(b)b.click();}
+ if(e.key==="z"||e.key==="Z"){e.preventDefault();const b=document.querySelector('[data-act="fcUndo"]');if(b&&!b.disabled)b.click();}
 });
 
 const ICON=(p)=>'<svg viewBox="0 0 24 24">'+p+"</svg>";

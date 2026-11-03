@@ -319,8 +319,9 @@ async def flashcards(req):
     if (req.query_params.get("document_id") or "").strip():
         try: doc_id = int(req.query_params["document_id"])
         except ValueError: return err("document_id must be an integer")
+    due_only = (req.query_params.get("due_only", "1") or "1").strip().lower() not in ("0", "false", "no", "all")
     with db.conn() as c:
-        out = sv.flashcards(c, limit, doc_id)
+        out = sv.flashcards(c, limit, doc_id, due_only)
     if out is None: return err("document not found", 404)
     return JSONResponse(out)
 
